@@ -2,24 +2,62 @@ $ErrorActionPreference = "Stop"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "FreedxmLauncher_FinalClean.zip"
-$Sha256 = "798FBD0FB350A8D278B237ED88F2E82300866997D2CB41D108B2563987904404"
+$AssetName = "FreedxmLauncher_ProRounded.zip"
+$Sha256 = "EE160E94C6289B680F0E44C73AA2E2CA7746E2D8A6CF83527AC060ED9E60649C"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
 $TempRoot = Join-Path $env:TEMP "FreedxmLauncherInstall"
 $TempZip = Join-Path $TempRoot "FreedxmLauncher.zip"
 
-function Write-Step {
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+
+public static class RunConsoleWindow
+{
+    [DllImport("kernel32.dll")]
+    public static extern IntPtr GetConsoleWindow();
+
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+}
+"@
+
+function Show-Loader {
     param(
         [string]$Status,
         [int]$Percent
     )
 
-    Write-Progress -Activity "Freedxm Launcher" -Status $Status -PercentComplete $Percent
+    $Percent = [Math]::Max(0, [Math]::Min(100, $Percent))
+    $barWidth = 36
+    $filled = [Math]::Floor(($Percent / 100) * $barWidth)
+    $empty = $barWidth - $filled
+
+    $bar = ("█" * $filled) + ("░" * $empty)
+
+    Clear-Host
+
+    Write-Host ""
+    Write-Host "  FREEDXM LAUNCHER" -ForegroundColor Cyan
+    Write-Host "  Professional one-link loader" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "  Status : " -NoNewline -ForegroundColor DarkGray
+    Write-Host $Status -ForegroundColor White
+    Write-Host ""
+    Write-Host "  [" -NoNewline -ForegroundColor DarkGray
+    Write-Host $bar -NoNewline -ForegroundColor Cyan
+    Write-Host "] " -NoNewline -ForegroundColor DarkGray
+    Write-Host "$Percent%" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "  Please wait..." -ForegroundColor DarkGray
 }
 
 try {
-    Write-Step -Status "Connecting to GitHub release..." -Percent 5
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    [Console]::CursorVisible = $false
+
+    Show-Loader -Status "Connecting to GitHub release..." -Percent 5
 
     $Headers = @{
         "User-Agent" = "FreedxmLauncherInstaller"
@@ -27,10 +65,10 @@ try {
 
     $ReleaseApi = "https://api.github.com/repos/$Owner/$Repo/releases/latest"
 
-    Write-Step -Status "Reading latest release..." -Percent 12
+    Show-Loader -Status "Reading latest release..." -Percent 12
     $Release = Invoke-RestMethod -Uri $ReleaseApi -Headers $Headers
 
-    Write-Step -Status "Finding package: $AssetName" -Percent 20
+    Show-Loader -Status "Finding package: $AssetName" -Percent 20
 
     $Asset = $Release.assets |
         Where-Object { $_.name -eq $AssetName } |
@@ -43,15 +81,15 @@ try {
 
     $ZipUrl = $Asset.browser_download_url
 
-    Write-Step -Status "Selected package: $($Asset.name)" -Percent 28
+    Show-Loader -Status "Selected package: $($Asset.name)" -Percent 28
 
     Remove-Item $TempRoot -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Path $TempRoot | Out-Null
 
-    Write-Step -Status "Downloading package..." -Percent 42
+    Show-Loader -Status "Downloading package..." -Percent 42
     Invoke-WebRequest -Uri $ZipUrl -OutFile $TempZip -UseBasicParsing -Headers $Headers
 
-    Write-Step -Status "Checking SHA256..." -Percent 64
+    Show-Loader -Status "Checking SHA256..." -Percent 64
     $ActualHash = (Get-FileHash $TempZip -Algorithm SHA256).Hash.ToUpperInvariant()
     $ExpectedHash = $Sha256.ToUpperInvariant()
 
@@ -59,14 +97,14 @@ try {
         throw "SHA256 mismatch for $AssetName.`nExpected: $ExpectedHash`nActual:   $ActualHash`nFix: upload the new ZIP file again, then commit this run.ps1."
     }
 
-    Write-Step -Status "Installing launcher files..." -Percent 78
+    Show-Loader -Status "Installing launcher files..." -Percent 78
 
     Remove-Item $InstallDir -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Path $InstallDir | Out-Null
 
     Expand-Archive -Path $TempZip -DestinationPath $InstallDir -Force
 
-    Write-Step -Status "Opening login GUI..." -Percent 92
+    Show-Loader -Status "Opening login GUI..." -Percent 92
 
     $GuiScript = Get-ChildItem -Path $InstallDir -Filter "FreedxmLauncher.ps1" -Recurse -File -ErrorAction SilentlyContinue |
         Select-Object -First 1
@@ -77,18 +115,26 @@ try {
 
     $ArgumentList = "-STA -NoProfile -ExecutionPolicy Bypass -File `"$($GuiScript.FullName)`""
 
-    Start-Process -FilePath "powershell.exe" -ArgumentList $ArgumentList -WindowStyle Normal
+    Start-Process -FilePath "powershell.exe" -ArgumentList $ArgumentList -WindowStyle Hidden
 
-    Write-Step -Status "Completed." -Percent 100
-    Start-Sleep -Milliseconds 500
-    Write-Progress -Activity "Freedxm Launcher" -Completed
+    Show-Loader -Status "Completed." -Percent 100
+    Start-Sleep -Milliseconds 700
+
+    $ConsoleWindow = [RunConsoleWindow]::GetConsoleWindow()
+    if ($ConsoleWindow -ne [IntPtr]::Zero) {
+        [RunConsoleWindow]::ShowWindow($ConsoleWindow, 6) | Out-Null
+    }
+
+    [Console]::CursorVisible = $true
 }
 catch {
-    Write-Progress -Activity "Freedxm Launcher" -Completed
+    [Console]::CursorVisible = $true
+    Clear-Host
     Write-Host ""
-    Write-Host "[Freedxm Launcher Error]" -ForegroundColor Red
-    Write-Host $_.Exception.Message -ForegroundColor Red
+    Write-Host "  FREEDXM LAUNCHER ERROR" -ForegroundColor Red
     Write-Host ""
-    Write-Host "Press Enter to close..." -ForegroundColor Yellow
+    Write-Host "  $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "  Press Enter to close..." -ForegroundColor Yellow
     [void][System.Console]::ReadLine()
 }
