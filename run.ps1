@@ -3,40 +3,61 @@ $ProgressPreference = "SilentlyContinue"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "FreedxmLauncher_INLINE_GUI_REALFIX.zip"
-$Sha256 = "E583E8A19755F0B3503BC2FD22BC5F99BFE7BDCF41842DE78193A7CEE430D2C2"
+$AssetName = "FreedxmLauncher_FORMSFIX_LOGIN_WORKING.zip"
+$Sha256 = "E4EF4F902CBB38E307CF330188806D5DA89E9499D0520EA3447DF5AF4B6F5EF8"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
 $TempRoot = Join-Path $env:TEMP "FreedxmLauncherInstall"
 $TempZip = Join-Path $TempRoot "FreedxmLauncher.zip"
 
+if (-not ("FreedxmNativeFormsFixV1" -as [type])) {
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
 
-public static class FreedxmNativeWindow
+public static class FreedxmNativeFormsFixV1
 {
     [DllImport("kernel32.dll")]
     public static extern IntPtr GetConsoleWindow();
 
     [DllImport("user32.dll")]
     public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    public static extern bool ReleaseCapture();
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
+
+    [DllImport("gdi32.dll")]
+    public static extern IntPtr CreateRoundRectRgn(
+        int nLeftRect,
+        int nTopRect,
+        int nRightRect,
+        int nBottomRect,
+        int nWidthEllipse,
+        int nHeightEllipse
+    );
+
+    [DllImport("user32.dll")]
+    public static extern bool SetProcessDPIAware();
 }
 "@
+}
 
 function Show-ConsoleWindow {
-    $handle = [FreedxmNativeWindow]::GetConsoleWindow()
+    $handle = [FreedxmNativeFormsFixV1]::GetConsoleWindow()
 
     if ($handle -ne [IntPtr]::Zero) {
-        [FreedxmNativeWindow]::ShowWindow($handle, 5) | Out-Null
+        [FreedxmNativeFormsFixV1]::ShowWindow($handle, 5) | Out-Null
     }
 }
 
 function Hide-ConsoleWindow {
-    $handle = [FreedxmNativeWindow]::GetConsoleWindow()
+    $handle = [FreedxmNativeFormsFixV1]::GetConsoleWindow()
 
     if ($handle -ne [IntPtr]::Zero) {
-        [FreedxmNativeWindow]::ShowWindow($handle, 0) | Out-Null
+        [FreedxmNativeFormsFixV1]::ShowWindow($handle, 0) | Out-Null
     }
 }
 
@@ -57,7 +78,7 @@ function Initialize-Loader {
 
     Write-Host ""
     Write-Host "  FREEDXM LAUNCHER" -ForegroundColor Cyan
-    Write-Host "  Inline GUI real fix loader" -ForegroundColor DarkGray
+    Write-Host "  FormsFix Login Working Loader" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "  Status : Preparing..." -ForegroundColor Gray
     Write-Host ""
@@ -65,7 +86,7 @@ function Initialize-Loader {
     Write-Host ""
     Write-Host "  Frame  : 0000" -ForegroundColor DarkGray
     Write-Host ""
-    Write-Host "  After loading, GODPROJEXTH credit will type, then Login GUI will open." -ForegroundColor DarkGray
+    Write-Host "  GODPROJEXTH credit will type, then LOGIN GUI will open." -ForegroundColor DarkGray
 }
 
 function Safe-WriteLine {
@@ -326,51 +347,8 @@ function Show-LoginGui {
 
     [System.Windows.Forms.Application]::EnableVisualStyles()
 
-    Add-Type @"
-using System;
-using System.Runtime.InteropServices;
-using System.Windows.Forms;
-
-public static class FreedxmGuiNative
-{
-    [DllImport("user32.dll")]
-    public static extern bool ReleaseCapture();
-
-    [DllImport("user32.dll")]
-    public static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
-
-    [DllImport("gdi32.dll")]
-    public static extern IntPtr CreateRoundRectRgn(
-        int nLeftRect,
-        int nTopRect,
-        int nRightRect,
-        int nBottomRect,
-        int nWidthEllipse,
-        int nHeightEllipse
-    );
-
-    [DllImport("user32.dll")]
-    public static extern bool SetProcessDPIAware();
-}
-
-public class SmoothPanel : Panel
-{
-    public SmoothPanel()
-    {
-        this.SetStyle(
-            ControlStyles.AllPaintingInWmPaint |
-            ControlStyles.UserPaint |
-            ControlStyles.OptimizedDoubleBuffer |
-            ControlStyles.ResizeRedraw,
-            true
-        );
-        this.UpdateStyles();
-    }
-}
-"@
-
     try {
-        [FreedxmGuiNative]::SetProcessDPIAware() | Out-Null
+        [FreedxmNativeFormsFixV1]::SetProcessDPIAware() | Out-Null
     }
     catch {
     }
@@ -415,7 +393,7 @@ public class SmoothPanel : Panel
 
         $r = [Math]::Max(2, (U $Radius))
 
-        $regionPointer = [FreedxmGuiNative]::CreateRoundRectRgn(
+        $regionPointer = [FreedxmNativeFormsFixV1]::CreateRoundRectRgn(
             0,
             0,
             $Control.Width + 1,
@@ -435,8 +413,8 @@ public class SmoothPanel : Panel
 
         $Control.Add_MouseDown({
             if ($_.Button -eq [System.Windows.Forms.MouseButtons]::Left) {
-                [FreedxmGuiNative]::ReleaseCapture() | Out-Null
-                [FreedxmGuiNative]::SendMessage($Form.Handle, 0xA1, 0x2, 0) | Out-Null
+                [FreedxmNativeFormsFixV1]::ReleaseCapture() | Out-Null
+                [FreedxmNativeFormsFixV1]::SendMessage($Form.Handle, 0xA1, 0x2, 0) | Out-Null
             }
         })
     }
@@ -517,6 +495,23 @@ public class SmoothPanel : Panel
         return $button
     }
 
+    function New-Panel {
+        param(
+            [int]$X,
+            [int]$Y,
+            [int]$Width,
+            [int]$Height,
+            [string]$Back = "#050910"
+        )
+
+        $panel = New-Object System.Windows.Forms.Panel
+        $panel.Location = New-Object System.Drawing.Point((U $X), (U $Y))
+        $panel.Size = New-Object System.Drawing.Size((U $Width), (U $Height))
+        $panel.BackColor = C $Back
+
+        return $panel
+    }
+
     $screen = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
     $baseWidth = 420
     $baseHeight = 625
@@ -550,61 +545,24 @@ public class SmoothPanel : Panel
         Round-Control -Control $form -Radius 38
     })
 
-    $root = New-Object SmoothPanel
+    $root = New-Panel -X 0 -Y 0 -Width $baseWidth -Height $baseHeight -Back "#050910"
     $root.Dock = [System.Windows.Forms.DockStyle]::Fill
-    $root.BackColor = C "#050910"
     $form.Controls.Add($root)
 
     $root.Add_HandleCreated({
         Round-Control -Control $root -Radius 38
     })
 
-    $root.Add_SizeChanged({
-        Round-Control -Control $root -Radius 38
-    })
-
-    $root.Add_Paint({
-        param($sender, $event)
-
-        $graphics = $event.Graphics
-        $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-
-        $rect = New-Object System.Drawing.Rectangle(0, 0, $sender.Width, $sender.Height)
-        $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-            $rect,
-            (C "#050910"),
-            (C "#07111F"),
-            90
-        )
-
-        $graphics.FillRectangle($brush, $rect)
-        $brush.Dispose()
-
-        $borderPen = New-Object System.Drawing.Pen((C "#111827"), 1)
-        $graphics.DrawRectangle($borderPen, 0, 0, $sender.Width - 1, $sender.Height - 1)
-        $borderPen.Dispose()
-    })
-
-    $header = New-Object SmoothPanel
-    $header.Location = New-Object System.Drawing.Point((U 14), (U 14))
-    $header.Size = New-Object System.Drawing.Size((U 392), (U 54))
-    $header.BackColor = C "#0B1220"
+    $header = New-Panel -X 14 -Y 14 -Width 392 -Height 54 -Back "#0B1220"
     $root.Controls.Add($header)
 
     $header.Add_HandleCreated({
         Round-Control -Control $header -Radius 20
     })
 
-    $header.Add_SizeChanged({
-        Round-Control -Control $header -Radius 20
-    })
-
     Enable-DragMove -Control $header -Form $form
 
-    $logo = New-Object SmoothPanel
-    $logo.Location = New-Object System.Drawing.Point((U 14), (U 14))
-    $logo.Size = New-Object System.Drawing.Size((U 26), (U 26))
-    $logo.BackColor = C "#5FA0FF"
+    $logo = New-Panel -X 14 -Y 14 -Width 26 -Height 26 -Back "#5FA0FF"
     $header.Controls.Add($logo)
 
     $logo.Add_HandleCreated({
@@ -635,71 +593,26 @@ public class SmoothPanel : Panel
         $form.Close()
     })
 
-    $body = New-Object SmoothPanel
-    $body.Location = New-Object System.Drawing.Point((U 14), (U 76))
-    $body.Size = New-Object System.Drawing.Size((U 392), (U 535))
-    $body.BackColor = [System.Drawing.Color]::Transparent
+    $body = New-Panel -X 14 -Y 76 -Width 392 -Height 535 -Back "#050910"
     $root.Controls.Add($body)
 
-    $loginPanel = New-Object SmoothPanel
+    $loginPanel = New-Object System.Windows.Forms.Panel
     $loginPanel.Dock = [System.Windows.Forms.DockStyle]::Fill
-    $loginPanel.BackColor = [System.Drawing.Color]::Transparent
+    $loginPanel.BackColor = C "#050910"
     $body.Controls.Add($loginPanel)
 
-    $modePanel = New-Object SmoothPanel
+    $modePanel = New-Object System.Windows.Forms.Panel
     $modePanel.Dock = [System.Windows.Forms.DockStyle]::Fill
-    $modePanel.BackColor = [System.Drawing.Color]::Transparent
+    $modePanel.BackColor = C "#050910"
     $modePanel.Visible = $false
     $body.Controls.Add($modePanel)
 
-    $hero = New-Object SmoothPanel
-    $hero.Location = New-Object System.Drawing.Point((U 18), (U 12))
-    $hero.Size = New-Object System.Drawing.Size((U 356), (U 178))
-    $hero.BackColor = C "#08111F"
+    $hero = New-Panel -X 18 -Y 12 -Width 356 -Height 178 -Back "#08111F"
     $loginPanel.Controls.Add($hero)
 
     $hero.Add_HandleCreated({
         Round-Control -Control $hero -Radius 20
     })
-
-    $hero.Add_SizeChanged({
-        Round-Control -Control $hero -Radius 20
-    })
-
-    $hero.Add_Paint({
-        param($sender, $event)
-
-        $graphics = $event.Graphics
-        $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-
-        $rect = New-Object System.Drawing.Rectangle(0, 0, $sender.Width, $sender.Height)
-
-        $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-            $rect,
-            (C "#08111F"),
-            (C "#0B2136"),
-            35
-        )
-
-        $graphics.FillRectangle($brush, $rect)
-        $brush.Dispose()
-
-        $glowBrush = New-Object System.Drawing.SolidBrush((C "#123D59"))
-        $graphics.FillEllipse($glowBrush, (U 144), (U 92), (U 96), (U 42))
-        $glowBrush.Dispose()
-
-        $linePen = New-Object System.Drawing.Pen((C "#5B6473"), 2)
-        $graphics.DrawLine($linePen, (U 252), (U 25), (U 312), (U 140))
-        $linePen.Dispose()
-
-        $thinPen = New-Object System.Drawing.Pen((C "#1E293B"), 1)
-        $graphics.DrawRectangle($thinPen, 0, 0, $sender.Width - 1, $sender.Height - 1)
-        $thinPen.Dispose()
-    })
-
-    $heroTabs = New-UiLabel -Text "-----   -----   ------" -X 128 -Y 14 -Width 160 -Height 18 -Size 7.5 -Color "#CBD5E1"
-    $loginPanel.Controls.Add($heroTabs)
-    $heroTabs.BringToFront()
 
     $heroBrand = New-UiLabel -Text "NEVERSTORE" -X 22 -Y 45 -Width 180 -Height 22 -Size 14 -Color "#506277" -Bold $true
     $heroSmall = New-UiLabel -Text "launcher interface" -X 24 -Y 63 -Width 132 -Height 12 -Size 6.5 -Color "#3C4A5C"
@@ -715,6 +628,10 @@ public class SmoothPanel : Panel
     $hero.Controls.Add($heroBottle)
     $hero.Controls.Add($heroDescription)
 
+    $heroTabs = New-UiLabel -Text "-----   -----   ------" -X 128 -Y 14 -Width 160 -Height 18 -Size 7.5 -Color "#CBD5E1"
+    $loginPanel.Controls.Add($heroTabs)
+    $heroTabs.BringToFront()
+
     $welcome = New-UiLabel -Text "Welcome Back!" -X 0 -Y 210 -Width 392 -Height 28 -Size 16 -Color "#FFFFFF" -Bold $true
     $welcome.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
     $loginPanel.Controls.Add($welcome)
@@ -723,10 +640,7 @@ public class SmoothPanel : Panel
     $welcomeSub.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
     $loginPanel.Controls.Add($welcomeSub)
 
-    $keyPanel = New-Object SmoothPanel
-    $keyPanel.Location = New-Object System.Drawing.Point((U 18), (U 280))
-    $keyPanel.Size = New-Object System.Drawing.Size((U 356), (U 48))
-    $keyPanel.BackColor = C "#0B1220"
+    $keyPanel = New-Panel -X 18 -Y 280 -Width 356 -Height 48 -Back "#0B1220"
     $loginPanel.Controls.Add($keyPanel)
 
     $keyPanel.Add_HandleCreated({
@@ -812,10 +726,7 @@ public class SmoothPanel : Panel
     $modePanel.Controls.Add($cleanButton)
     $modePanel.Controls.Add($websiteButton)
 
-    $activity = New-Object SmoothPanel
-    $activity.Location = New-Object System.Drawing.Point((U 18), (U 276))
-    $activity.Size = New-Object System.Drawing.Size((U 356), (U 218))
-    $activity.BackColor = C "#090F19"
+    $activity = New-Panel -X 18 -Y 276 -Width 356 -Height 218 -Back "#090F19"
     $activity.Visible = $false
     $modePanel.Controls.Add($activity)
 
