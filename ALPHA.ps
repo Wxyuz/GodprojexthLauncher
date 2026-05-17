@@ -38,8 +38,8 @@ if ($env:GODPROJEXTH_ALPHA_STA_RELAUNCHED -ne "1") {
 $BrandName = "GODPROJEXTH"
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "Godprojexth_ALPHA_ASSET.zip"
-$Sha256 = "7CC5C9717C2DD6BE85569A5736234C9DED64397BA47D79D4D6AC051AF592FA83"
+$AssetName = "Godprojexth_ALPHA_ROUNDED_DRAG_ASSET.zip"
+$Sha256 = "8B9021BED430AB5EAD4C7595BF3DAA800D95827660247C3642DD14D26C75EEE2"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthLauncher"
 $TempRoot = Join-Path $env:TEMP "GodprojexthInstall"
@@ -478,10 +478,52 @@ function Show-LoginGui {
             [System.Windows.Forms.Form]$Form
         )
 
+        if ($null -eq $Control -or $null -eq $Form) {
+            return
+        }
+
+        $script:AlphaDragForm = $Form
+
         $Control.Add_MouseDown({
             if ($_.Button -eq [System.Windows.Forms.MouseButtons]::Left) {
-                [GodprojexthAlphaNative]::ReleaseCapture() | Out-Null
-                [GodprojexthAlphaNative]::SendMessage($Form.Handle, 0xA1, 0x2, 0) | Out-Null
+                $script:AlphaDragActive = $true
+                $script:AlphaDragMouseStart = [System.Windows.Forms.Control]::MousePosition
+                $script:AlphaDragFormStart = $script:AlphaDragForm.Location
+
+                try {
+                    $this.Capture = $true
+                }
+                catch {
+                }
+            }
+        })
+
+        $Control.Add_MouseMove({
+            if ($script:AlphaDragActive -eq $true -and $null -ne $script:AlphaDragForm) {
+                $currentMouse = [System.Windows.Forms.Control]::MousePosition
+                $deltaX = $currentMouse.X - $script:AlphaDragMouseStart.X
+                $deltaY = $currentMouse.Y - $script:AlphaDragMouseStart.Y
+
+                $newX = $script:AlphaDragFormStart.X + $deltaX
+                $newY = $script:AlphaDragFormStart.Y + $deltaY
+
+                $script:AlphaDragForm.Location = New-Object System.Drawing.Point($newX, $newY)
+            }
+        })
+
+        $Control.Add_MouseUp({
+            $script:AlphaDragActive = $false
+
+            try {
+                $this.Capture = $false
+            }
+            catch {
+            }
+        })
+
+        $Control.Add_MouseLeave({
+            if ([System.Windows.Forms.Control]::MouseButtons -ne [System.Windows.Forms.MouseButtons]::Left) {
+                $script:AlphaDragActive = $false
             }
         })
     }
@@ -594,17 +636,14 @@ function Show-LoginGui {
             Set-Round -Control $button -Radius $Radius
         })
 
-        $button.Add_MouseEnter({
-            $button.FlatAppearance.BorderSize = 1
-            $button.FlatAppearance.BorderColor = New-C "#93C5FD"
-        })
-
-        $button.Add_MouseLeave({
-            $button.FlatAppearance.BorderSize = 0
-        })
 
         return $button
     }
+
+    $script:AlphaDragActive = $false
+    $script:AlphaDragMouseStart = New-Object System.Drawing.Point(0, 0)
+    $script:AlphaDragFormStart = New-Object System.Drawing.Point(0, 0)
+    $script:AlphaDragForm = $null
 
     $form = New-Object System.Windows.Forms.Form
     $form.Text = "GODPROJEXTH ALPHA"
@@ -723,7 +762,7 @@ function Show-LoginGui {
     $loginPanel.Controls.Add($sub)
     Enable-Drag -Control $sub -Form $form
 
-    $keyPanel = New-UiPanel 10 254 358 48 "#0B1220" 18
+    $keyPanel = New-UiPanel 10 254 358 48 "#0B1220" 24
     $loginPanel.Controls.Add($keyPanel)
 
     $keyPanel.Controls.Add((New-UiLabel "key" 16 13 34 22 8 "#64748B"))
@@ -768,7 +807,7 @@ function Show-LoginGui {
     $loginPanel.Controls.Add($forgot)
     $loginPanel.Controls.Add($support)
 
-    $signIn = New-UiButton "Sign In" 10 372 358 44 "#5FA0FF" "#07111F" 18
+    $signIn = New-UiButton "SING IN" 10 372 358 44 "#5FA0FF" "#07111F" 24
     $loginPanel.Controls.Add($signIn)
 
     $dot = New-UiLabel "." 184 454 14 14 6 "#334155"
@@ -834,9 +873,9 @@ function Show-LoginGui {
     $modeCenter.Add_Click({ SetMode "NORMAL" })
     $modeRight.Add_Click({ SetMode "HYPER" })
 
-    $loadButton = New-UiButton "Load" 38 302 302 44 "#5FA0FF" "#07111F" 18
-    $cleanButton = New-UiButton "Clean" 38 358 302 44 "#111827" "#CBD5E1" 18
-    $websiteButton = New-UiButton "WEBSITE" 38 414 302 44 "#5FA0FF" "#07111F" 18
+    $loadButton = New-UiButton "Load" 38 302 302 44 "#5FA0FF" "#07111F" 24
+    $cleanButton = New-UiButton "Clean" 38 358 302 44 "#111827" "#CBD5E1" 24
+    $websiteButton = New-UiButton "WEBSITE" 38 414 302 44 "#5FA0FF" "#07111F" 24
 
     $modePanel.Controls.Add($loadButton)
     $modePanel.Controls.Add($cleanButton)
