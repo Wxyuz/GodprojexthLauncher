@@ -1,9 +1,10 @@
 $ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "FreedxmLauncher_ProRounded.zip"
-$Sha256 = "EE160E94C6289B680F0E44C73AA2E2CA7746E2D8A6CF83527AC060ED9E60649C"
+$AssetName = "FreedxmLauncher_Smooth60.zip"
+$Sha256 = "EBDD1615097CA757DBD95B7E42CB22350A7DEBA63900B71D40347C6AE865E707"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
 $TempRoot = Join-Path $env:TEMP "FreedxmLauncherInstall"
@@ -13,7 +14,7 @@ Add-Type @"
 using System;
 using System.Runtime.InteropServices;
 
-public static class RunConsoleWindow
+public static class LoaderConsoleWindow
 {
     [DllImport("kernel32.dll")]
     public static extern IntPtr GetConsoleWindow();
@@ -23,41 +24,179 @@ public static class RunConsoleWindow
 }
 "@
 
-function Show-Loader {
-    param(
-        [string]$Status,
-        [int]$Percent
-    )
-
-    $Percent = [Math]::Max(0, [Math]::Min(100, $Percent))
-    $barWidth = 36
-    $filled = [Math]::Floor(($Percent / 100) * $barWidth)
-    $empty = $barWidth - $filled
-
-    $bar = ("█" * $filled) + ("░" * $empty)
+function Initialize-ConsoleLoader {
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    [Console]::CursorVisible = $false
 
     Clear-Host
 
     Write-Host ""
     Write-Host "  FREEDXM LAUNCHER" -ForegroundColor Cyan
-    Write-Host "  Professional one-link loader" -ForegroundColor DarkGray
+    Write-Host "  Smooth 60 FPS PowerShell loader" -ForegroundColor DarkGray
     Write-Host ""
-    Write-Host "  Status : " -NoNewline -ForegroundColor DarkGray
-    Write-Host $Status -ForegroundColor White
+    Write-Host "  Status : Preparing..." -ForegroundColor Gray
     Write-Host ""
-    Write-Host "  [" -NoNewline -ForegroundColor DarkGray
-    Write-Host $bar -NoNewline -ForegroundColor Cyan
-    Write-Host "] " -NoNewline -ForegroundColor DarkGray
-    Write-Host "$Percent%" -ForegroundColor Yellow
+    Write-Host "  [----------------------------------------] 0%" -ForegroundColor DarkGray
     Write-Host ""
-    Write-Host "  Please wait..." -ForegroundColor DarkGray
+    Write-Host "  Frame  : 0000" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "  Please wait. The login window will open automatically." -ForegroundColor DarkGray
+}
+
+function Write-CleanLine {
+    param(
+        [int]$Top,
+        [string]$Text,
+        [System.ConsoleColor]$Color = [System.ConsoleColor]::White
+    )
+
+    $width = [Console]::WindowWidth
+    if ($width -lt 20) {
+        $width = 120
+    }
+
+    if ($Text.Length -gt ($width - 1)) {
+        $Text = $Text.Substring(0, $width - 1)
+    }
+
+    $padded = $Text.PadRight($width - 1)
+
+    [Console]::SetCursorPosition(0, $Top)
+    Write-Host $padded -NoNewline -ForegroundColor $Color
+}
+
+function Draw-Loader {
+    param(
+        [string]$Status,
+        [int]$Percent,
+        [int]$Frame
+    )
+
+    $Percent = [Math]::Max(0, [Math]::Min(100, $Percent))
+
+    $barWidth = 40
+    $filled = [int][Math]::Floor(($Percent / 100) * $barWidth)
+
+    if ($filled -lt 0) {
+        $filled = 0
+    }
+
+    if ($filled -gt $barWidth) {
+        $filled = $barWidth
+    }
+
+    $empty = $barWidth - $filled
+    $bar = ("#" * $filled) + ("-" * $empty)
+
+    $spinnerChars = @("|", "/", "-", "\")
+    $spinner = $spinnerChars[$Frame % $spinnerChars.Count]
+
+    Write-CleanLine -Top 4 -Text ("  Status : {0} {1}" -f $Status, $spinner) -Color White
+    Write-CleanLine -Top 6 -Text ("  [{0}] {1,3}%" -f $bar, $Percent) -Color Cyan
+    Write-CleanLine -Top 8 -Text ("  Frame  : {0:0000}" -f $Frame) -Color DarkGray
+}
+
+function Animate-ToPercent {
+    param(
+        [int]$From,
+        [int]$To,
+        [string]$Status,
+        [ref]$FrameRef
+    )
+
+    if ($To -lt $From) {
+        $To = $From
+    }
+
+    for ($value = $From; $value -le $To; $value++) {
+        Draw-Loader -Status $Status -Percent $value -Frame $FrameRef.Value
+        $FrameRef.Value++
+        Start-Sleep -Milliseconds 16
+    }
+
+    return $To
+}
+
+function Download-FileSmooth {
+    param(
+        [string]$Url,
+        [string]$OutFile,
+        [hashtable]$Headers,
+        [ref]$FrameRef
+    )
+
+    $request = [System.Net.HttpWebRequest]::Create($Url)
+    $request.Method = "GET"
+    $request.AllowAutoRedirect = $true
+    $request.UserAgent = $Headers["User-Agent"]
+
+    $response = $null
+    $inputStream = $null
+    $outputStream = $null
+
+    try {
+        $response = $request.GetResponse()
+        $totalBytes = $response.ContentLength
+
+        $inputStream = $response.GetResponseStream()
+        $outputStream = [System.IO.File]::Create($OutFile)
+
+        $buffer = New-Object byte[] 65536
+        $totalRead = 0L
+        $lastDraw = [Environment]::TickCount
+
+        while ($true) {
+            $read = $inputStream.Read($buffer, 0, $buffer.Length)
+
+            if ($read -le 0) {
+                break
+            }
+
+            $outputStream.Write($buffer, 0, $read)
+            $totalRead += $read
+
+            $now = [Environment]::TickCount
+            if (($now - $lastDraw) -ge 16) {
+                if ($totalBytes -gt 0) {
+                    $downloadPercent = [int](35 + (($totalRead / $totalBytes) * 28))
+                    Draw-Loader -Status "Downloading package..." -Percent $downloadPercent -Frame $FrameRef.Value
+                }
+                else {
+                    $softPercent = 42 + ($FrameRef.Value % 18)
+                    Draw-Loader -Status "Downloading package..." -Percent $softPercent -Frame $FrameRef.Value
+                }
+
+                $FrameRef.Value++
+                $lastDraw = $now
+            }
+        }
+    }
+    finally {
+        if ($outputStream -ne $null) {
+            $outputStream.Close()
+            $outputStream.Dispose()
+        }
+
+        if ($inputStream -ne $null) {
+            $inputStream.Close()
+            $inputStream.Dispose()
+        }
+
+        if ($response -ne $null) {
+            $response.Close()
+        }
+    }
 }
 
 try {
-    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-    [Console]::CursorVisible = $false
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-    Show-Loader -Status "Connecting to GitHub release..." -Percent 5
+    Initialize-ConsoleLoader
+
+    $frame = 0
+    $progress = 0
+
+    $progress = Animate-ToPercent -From $progress -To 8 -Status "Connecting to GitHub release..." -FrameRef ([ref]$frame)
 
     $Headers = @{
         "User-Agent" = "FreedxmLauncherInstaller"
@@ -65,10 +204,10 @@ try {
 
     $ReleaseApi = "https://api.github.com/repos/$Owner/$Repo/releases/latest"
 
-    Show-Loader -Status "Reading latest release..." -Percent 12
+    $progress = Animate-ToPercent -From $progress -To 16 -Status "Reading latest release..." -FrameRef ([ref]$frame)
     $Release = Invoke-RestMethod -Uri $ReleaseApi -Headers $Headers
 
-    Show-Loader -Status "Finding package: $AssetName" -Percent 20
+    $progress = Animate-ToPercent -From $progress -To 25 -Status "Finding package: $AssetName" -FrameRef ([ref]$frame)
 
     $Asset = $Release.assets |
         Where-Object { $_.name -eq $AssetName } |
@@ -81,15 +220,15 @@ try {
 
     $ZipUrl = $Asset.browser_download_url
 
-    Show-Loader -Status "Selected package: $($Asset.name)" -Percent 28
+    $progress = Animate-ToPercent -From $progress -To 34 -Status "Preparing download folder..." -FrameRef ([ref]$frame)
 
     Remove-Item $TempRoot -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Path $TempRoot | Out-Null
 
-    Show-Loader -Status "Downloading package..." -Percent 42
-    Invoke-WebRequest -Uri $ZipUrl -OutFile $TempZip -UseBasicParsing -Headers $Headers
+    Download-FileSmooth -Url $ZipUrl -OutFile $TempZip -Headers $Headers -FrameRef ([ref]$frame)
 
-    Show-Loader -Status "Checking SHA256..." -Percent 64
+    $progress = Animate-ToPercent -From 64 -To 72 -Status "Checking SHA256..." -FrameRef ([ref]$frame)
+
     $ActualHash = (Get-FileHash $TempZip -Algorithm SHA256).Hash.ToUpperInvariant()
     $ExpectedHash = $Sha256.ToUpperInvariant()
 
@@ -97,14 +236,14 @@ try {
         throw "SHA256 mismatch for $AssetName.`nExpected: $ExpectedHash`nActual:   $ActualHash`nFix: upload the new ZIP file again, then commit this run.ps1."
     }
 
-    Show-Loader -Status "Installing launcher files..." -Percent 78
+    $progress = Animate-ToPercent -From $progress -To 84 -Status "Installing launcher files..." -FrameRef ([ref]$frame)
 
     Remove-Item $InstallDir -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Path $InstallDir | Out-Null
 
     Expand-Archive -Path $TempZip -DestinationPath $InstallDir -Force
 
-    Show-Loader -Status "Opening login GUI..." -Percent 92
+    $progress = Animate-ToPercent -From $progress -To 94 -Status "Preparing login window..." -FrameRef ([ref]$frame)
 
     $GuiScript = Get-ChildItem -Path $InstallDir -Filter "FreedxmLauncher.ps1" -Recurse -File -ErrorAction SilentlyContinue |
         Select-Object -First 1
@@ -113,16 +252,17 @@ try {
         throw "FreedxmLauncher.ps1 was not found after install."
     }
 
-    $ArgumentList = "-STA -NoProfile -ExecutionPolicy Bypass -File `"$($GuiScript.FullName)`""
+    $ArgumentList = "-STA -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$($GuiScript.FullName)`""
 
     Start-Process -FilePath "powershell.exe" -ArgumentList $ArgumentList -WindowStyle Hidden
 
-    Show-Loader -Status "Completed." -Percent 100
-    Start-Sleep -Milliseconds 700
+    $progress = Animate-ToPercent -From $progress -To 100 -Status "Completed. Opening login..." -FrameRef ([ref]$frame)
 
-    $ConsoleWindow = [RunConsoleWindow]::GetConsoleWindow()
+    Start-Sleep -Milliseconds 450
+
+    $ConsoleWindow = [LoaderConsoleWindow]::GetConsoleWindow()
     if ($ConsoleWindow -ne [IntPtr]::Zero) {
-        [RunConsoleWindow]::ShowWindow($ConsoleWindow, 6) | Out-Null
+        [LoaderConsoleWindow]::ShowWindow($ConsoleWindow, 6) | Out-Null
     }
 
     [Console]::CursorVisible = $true
