@@ -3,19 +3,19 @@ $ProgressPreference = "SilentlyContinue"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "FreedxmLauncher_YELLOW_METAL_FRONTFIX.zip"
-$Sha256 = "80D69106086C53DCFD5240E94E178D9C76AE7BAA1CC402042ADA1B71423F0F45"
+$AssetName = "FreedxmLauncher_GOLD_STABLE_LOGIN.zip"
+$Sha256 = "80EBE81AF7E3DDC06DA3D12D382EAA915F14EEA2FE312AC9996AEA64DA58B197"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
 $TempRoot = Join-Path $env:TEMP "FreedxmLauncherInstall"
 $TempZip = Join-Path $TempRoot "FreedxmLauncher.zip"
 
-if (-not ("FreedxmLoaderNativeYellowMetalV5" -as [type])) {
+if (-not ("FreedxmLoaderNativeGoldStable" -as [type])) {
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
 
-public static class FreedxmLoaderNativeYellowMetalV5
+public static class FreedxmLoaderNativeGoldStable
 {
     [DllImport("kernel32.dll")]
     public static extern IntPtr GetConsoleWindow();
@@ -27,18 +27,18 @@ public static class FreedxmLoaderNativeYellowMetalV5
 }
 
 function Show-ConsoleWindow {
-    $handle = [FreedxmLoaderNativeYellowMetalV5]::GetConsoleWindow()
+    $handle = [FreedxmLoaderNativeGoldStable]::GetConsoleWindow()
 
     if ($handle -ne [IntPtr]::Zero) {
-        [FreedxmLoaderNativeYellowMetalV5]::ShowWindow($handle, 5) | Out-Null
+        [FreedxmLoaderNativeGoldStable]::ShowWindow($handle, 5) | Out-Null
     }
 }
 
 function Minimize-ConsoleWindow {
-    $handle = [FreedxmLoaderNativeYellowMetalV5]::GetConsoleWindow()
+    $handle = [FreedxmLoaderNativeGoldStable]::GetConsoleWindow()
 
     if ($handle -ne [IntPtr]::Zero) {
-        [FreedxmLoaderNativeYellowMetalV5]::ShowWindow($handle, 6) | Out-Null
+        [FreedxmLoaderNativeGoldStable]::ShowWindow($handle, 6) | Out-Null
     }
 }
 
@@ -59,15 +59,15 @@ function Initialize-Loader {
 
     Write-Host ""
     Write-Host "  FREEDXM LAUNCHER" -ForegroundColor Yellow
-    Write-Host "  Yellow Metal Loader" -ForegroundColor DarkYellow
+    Write-Host "  Gold Stable Login Loader" -ForegroundColor DarkYellow
     Write-Host ""
     Write-Host "  Status : Preparing..." -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "  [........................................]   0%" -ForegroundColor DarkYellow
+    Write-Host "  [--------------------------------------------]   0%" -ForegroundColor DarkYellow
     Write-Host ""
     Write-Host "  Frame  : 0000" -ForegroundColor DarkYellow
     Write-Host ""
-    Write-Host "  GODPROJEXTH metal pixel credit will type, then LOGIN GUI opens." -ForegroundColor DarkYellow
+    Write-Host "  GODPROJEXTH credit will type, then Login GUI opens." -ForegroundColor DarkYellow
 }
 
 function Safe-WriteLine {
@@ -97,7 +97,7 @@ function Safe-WriteLine {
     }
 }
 
-function Draw-YellowLoader {
+function Draw-GoldLoader {
     param(
         [string]$Status,
         [int]$Percent,
@@ -118,38 +118,24 @@ function Draw-YellowLoader {
     }
 
     $empty = $barWidth - $filled
-    $pulse = $Frame % 4
 
-    if ($pulse -eq 0) {
-        $head = "▓"
-    }
-    elseif ($pulse -eq 1) {
-        $head = "▒"
-    }
-    elseif ($pulse -eq 2) {
-        $head = "░"
-    }
-    else {
-        $head = "▓"
-    }
-
-    if ($filled -le 0) {
-        $bar = ("░" * $barWidth)
+    if ($filled -eq 0) {
+        $bar = "-" * $barWidth
     }
     elseif ($filled -ge $barWidth) {
-        $bar = ("█" * $barWidth)
+        $bar = "#" * $barWidth
     }
     else {
-        $bar = ("█" * ($filled - 1)) + $head + ("░" * $empty)
+        $bar = ("#" * $filled) + ("-" * $empty)
     }
 
-    $spinnerChars = @("◐", "◓", "◑", "◒")
+    $spinnerChars = @("|", "/", "-", "\")
     $spinner = $spinnerChars[$Frame % $spinnerChars.Count]
 
     Safe-WriteLine -Top 4 -Text ("  Status : {0} {1}" -f $Status, $spinner) -Color Yellow
-    Safe-WriteLine -Top 6 -Text ("  ╔{0}╗" -f ("═" * $barWidth)) -Color DarkYellow
-    Safe-WriteLine -Top 7 -Text ("  ║{0}║ {1,3}%" -f $bar, $Percent) -Color Yellow
-    Safe-WriteLine -Top 8 -Text ("  ╚{0}╝" -f ("═" * $barWidth)) -Color DarkYellow
+    Safe-WriteLine -Top 6 -Text ("  +{0}+" -f ("=" * $barWidth)) -Color DarkYellow
+    Safe-WriteLine -Top 7 -Text ("  |{0}| {1,3}%" -f $bar, $Percent) -Color Yellow
+    Safe-WriteLine -Top 8 -Text ("  +{0}+" -f ("=" * $barWidth)) -Color DarkYellow
     Safe-WriteLine -Top 10 -Text ("  Frame  : {0:0000}" -f $Frame) -Color DarkYellow
 }
 
@@ -166,7 +152,7 @@ function Animate-ToPercent {
     }
 
     for ($value = $From; $value -le $To; $value++) {
-        Draw-YellowLoader -Status $Status -Percent $value -Frame $FrameRef.Value
+        Draw-GoldLoader -Status $Status -Percent $value -Frame $FrameRef.Value
         $FrameRef.Value++
         Start-Sleep -Milliseconds 16
     }
@@ -217,11 +203,11 @@ function Download-FileSmooth {
             if (($now - $lastDraw) -ge 16) {
                 if ($totalBytes -gt 0) {
                     $downloadPercent = [int](35 + (($totalRead / $totalBytes) * 28))
-                    Draw-YellowLoader -Status "Downloading package..." -Percent $downloadPercent -Frame $FrameRef.Value
+                    Draw-GoldLoader -Status "Downloading package..." -Percent $downloadPercent -Frame $FrameRef.Value
                 }
                 else {
                     $softPercent = 42 + ($FrameRef.Value % 18)
-                    Draw-YellowLoader -Status "Downloading package..." -Percent $softPercent -Frame $FrameRef.Value
+                    Draw-GoldLoader -Status "Downloading package..." -Percent $softPercent -Frame $FrameRef.Value
                 }
 
                 $FrameRef.Value++
@@ -246,88 +232,19 @@ function Download-FileSmooth {
     }
 }
 
-function Get-MetalPixelWord {
+function Get-GoldPixelWord {
     $font = @{}
 
-    $font["G"] = @(
-        " ██████ ",
-        "██      ",
-        "██  ███",
-        "██   ██",
-        " █████ "
-    )
-
-    $font["O"] = @(
-        " █████ ",
-        "██   ██",
-        "██   ██",
-        "██   ██",
-        " █████ "
-    )
-
-    $font["D"] = @(
-        "██████ ",
-        "██   ██",
-        "██   ██",
-        "██   ██",
-        "██████ "
-    )
-
-    $font["P"] = @(
-        "██████ ",
-        "██   ██",
-        "██████ ",
-        "██     ",
-        "██     "
-    )
-
-    $font["R"] = @(
-        "██████ ",
-        "██   ██",
-        "██████ ",
-        "██  ██ ",
-        "██   ██"
-    )
-
-    $font["J"] = @(
-        "  █████",
-        "    ██ ",
-        "    ██ ",
-        "██  ██ ",
-        " ████  "
-    )
-
-    $font["E"] = @(
-        "███████",
-        "██     ",
-        "██████ ",
-        "██     ",
-        "███████"
-    )
-
-    $font["X"] = @(
-        "██   ██",
-        " ██ ██ ",
-        "  ███  ",
-        " ██ ██ ",
-        "██   ██"
-    )
-
-    $font["T"] = @(
-        "███████",
-        "  ███  ",
-        "  ███  ",
-        "  ███  ",
-        "  ███  "
-    )
-
-    $font["H"] = @(
-        "██   ██",
-        "██   ██",
-        "███████",
-        "██   ██",
-        "██   ██"
-    )
+    $font["G"] = @(" ### ","#    ","#  ##","#   #"," ### ")
+    $font["O"] = @(" ### ","#   #","#   #","#   #"," ### ")
+    $font["D"] = @("#### ","#   #","#   #","#   #","#### ")
+    $font["P"] = @("#### ","#   #","#### ","#    ","#    ")
+    $font["R"] = @("#### ","#   #","#### ","#  # ","#   #")
+    $font["J"] = @("  ###","   # ","   # ","#  # "," ##  ")
+    $font["E"] = @("#####","#    ","#### ","#    ","#####")
+    $font["X"] = @("#   #"," # # ","  #  "," # # ","#   #")
+    $font["T"] = @("#####","  #  ","  #  ","  #  ","  #  ")
+    $font["H"] = @("#   #","#   #","#####","#   #","#   #")
 
     $word = "GODPROJEXTH"
     $lines = @("", "", "", "", "")
@@ -343,28 +260,28 @@ function Get-MetalPixelWord {
     return $lines
 }
 
-function Show-GodprojexthMetalCredit {
+function Show-GoldGodCredit {
     param([ref]$FrameRef)
 
     Clear-Host
 
-    $art = Get-MetalPixelWord
+    $art = Get-GoldPixelWord
     $maxLength = ($art | ForEach-Object { $_.Length } | Measure-Object -Maximum).Maximum
 
     Write-Host ""
     Write-Host ""
-    Write-Host "        CREDIT" -ForegroundColor DarkYellow
+    Write-Host "  CREDIT" -ForegroundColor DarkYellow
     Write-Host ""
 
     for ($column = 1; $column -le $maxLength; $column++) {
         for ($row = 0; $row -lt $art.Count; $row++) {
-            $sourceLine = $art[$row]
+            $line = $art[$row]
 
-            if ($column -gt $sourceLine.Length) {
-                $part = $sourceLine
+            if ($column -gt $line.Length) {
+                $part = $line
             }
             else {
-                $part = $sourceLine.Substring(0, $column)
+                $part = $line.Substring(0, $column)
             }
 
             if ($row -eq 0) {
@@ -383,15 +300,15 @@ function Show-GodprojexthMetalCredit {
                 $color = [System.ConsoleColor]::DarkYellow
             }
 
-            Safe-WriteLine -Top (4 + $row) -Text ("        " + $part) -Color $color
+            Safe-WriteLine -Top (4 + $row) -Text ("  " + $part) -Color $color
         }
 
-        Safe-WriteLine -Top 11 -Text ("        METAL PIXEL TYPE-IN  frame {0:0000}" -f $FrameRef.Value) -Color DarkYellow
+        Safe-WriteLine -Top 11 -Text ("  GOLD PIXEL CREDIT  frame {0:0000}" -f $FrameRef.Value) -Color DarkYellow
         $FrameRef.Value++
-        Start-Sleep -Milliseconds 20
+        Start-Sleep -Milliseconds 24
     }
 
-    for ($shine = 0; $shine -lt 60; $shine++) {
+    for ($shine = 0; $shine -lt 40; $shine++) {
         for ($row = 0; $row -lt $art.Count; $row++) {
             $phase = ($shine + $row) % 5
 
@@ -411,51 +328,43 @@ function Show-GodprojexthMetalCredit {
                 $color = [System.ConsoleColor]::Yellow
             }
 
-            Safe-WriteLine -Top (4 + $row) -Text ("        " + $art[$row]) -Color $color
+            Safe-WriteLine -Top (4 + $row) -Text ("  " + $art[$row]) -Color $color
         }
 
-        Safe-WriteLine -Top 11 -Text ("        Opening smooth Login GUI... frame {0:0000}" -f $FrameRef.Value) -Color DarkYellow
+        Safe-WriteLine -Top 11 -Text ("  Opening stable Login GUI... frame {0:0000}" -f $FrameRef.Value) -Color DarkYellow
         $FrameRef.Value++
         Start-Sleep -Milliseconds 16
     }
 }
 
-function Start-SmoothLoginGui {
-    param(
-        [string]$InstallPath
+function Start-StableLoginGui {
+    param([string]$InstallPath)
+
+    $guiPath = Join-Path $InstallPath "FreedxmLogin.ps1"
+
+    if (-not (Test-Path -LiteralPath $guiPath)) {
+        throw "GUI script not found: $guiPath"
+    }
+
+    $powerShellExe = Join-Path $PSHOME "powershell.exe"
+
+    if (-not (Test-Path -LiteralPath $powerShellExe)) {
+        $powerShellExe = "powershell.exe"
+    }
+
+    $arguments = @(
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-STA",
+        "-File",
+        "`"$guiPath`""
     )
 
-    $vbsPath = Join-Path $InstallPath "Launch_Login.vbs"
-    $psPath = Join-Path $InstallPath "FreedxmLoginSmooth.ps1"
-
-    if (-not (Test-Path -LiteralPath $psPath)) {
-        throw "GUI script not found: $psPath"
-    }
-
-    if (Test-Path -LiteralPath $vbsPath) {
-        $process = Start-Process -FilePath "wscript.exe" -ArgumentList "`"$vbsPath`"" -PassThru
-    }
-    else {
-        $powerShellExe = Join-Path $PSHOME "powershell.exe"
-
-        if (-not (Test-Path -LiteralPath $powerShellExe)) {
-            $powerShellExe = "powershell.exe"
-        }
-
-        $arguments = @(
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-STA",
-            "-File",
-            "`"$psPath`""
-        )
-
-        $process = Start-Process -FilePath $powerShellExe -ArgumentList $arguments -WindowStyle Normal -PassThru
-    }
+    $process = Start-Process -FilePath $powerShellExe -ArgumentList $arguments -WindowStyle Normal -PassThru
 
     if (-not $process) {
-        throw "Cannot start Login GUI."
+        throw "Cannot start stable Login GUI."
     }
 
     return $process
@@ -516,13 +425,13 @@ try {
 
     Expand-Archive -Path $TempZip -DestinationPath $InstallDir -Force
 
-    $progress = Animate-ToPercent -From $progress -To 100 -Status "Completed. Showing metal credit..." -FrameRef ([ref]$frame)
+    $progress = Animate-ToPercent -From $progress -To 100 -Status "Completed. Showing credit..." -FrameRef ([ref]$frame)
 
-    Show-GodprojexthMetalCredit -FrameRef ([ref]$frame)
+    Show-GoldGodCredit -FrameRef ([ref]$frame)
 
-    Start-SmoothLoginGui -InstallPath $InstallDir | Out-Null
+    Start-StableLoginGui -InstallPath $InstallDir | Out-Null
 
-    Start-Sleep -Milliseconds 1300
+    Start-Sleep -Milliseconds 1200
 
     Minimize-ConsoleWindow
 
