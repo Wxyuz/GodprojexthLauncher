@@ -2,8 +2,8 @@ $ErrorActionPreference = "Stop"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$PreferredAssetName = "FreedxmLauncher_LoginFixed.zip"
-$Sha256 = "FBCFA7CFB268203208889A265BA21C3DF8AF4533575EEAD08C0203B70835FC60"
+$PreferredAssetName = "FreedxmLauncher_LoginVisible.zip"
+$Sha256 = "5BF321967401DD9AE50ACE0C22B96D4C9B5D7A432E0D00EF73917CAD3646E249"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
 $TempRoot = Join-Path $env:TEMP "FreedxmLauncherInstall"
@@ -70,13 +70,7 @@ try {
         throw "FreedxmLauncher.ps1 was not found after install."
     }
 
-    $ProcessInfo = New-Object System.Diagnostics.ProcessStartInfo
-    $ProcessInfo.FileName = "powershell.exe"
-    $ProcessInfo.Arguments = "-STA -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$($GuiScript.FullName)`""
-    $ProcessInfo.UseShellExecute = $true
-    $ProcessInfo.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
-
-    [System.Diagnostics.Process]::Start($ProcessInfo) | Out-Null
+    Start-Process -FilePath "powershell.exe" -ArgumentList "-STA -NoProfile -ExecutionPolicy Bypass -File `"$($GuiScript.FullName)`""
 
     Write-Step -Status "Completed." -Percent 100
     Start-Sleep -Milliseconds 500
