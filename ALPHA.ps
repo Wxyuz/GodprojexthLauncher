@@ -38,8 +38,8 @@ if ($env:GODPROJEXTH_ALPHA_STA_RELAUNCHED -ne "1") {
 $BrandName = "GODPROJEXTH"
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "Godprojexth_ALPHA_ROUNDED_DRAG_ASSET.zip"
-$Sha256 = "8B9021BED430AB5EAD4C7595BF3DAA800D95827660247C3642DD14D26C75EEE2"
+$AssetName = "Godprojexth_STABLEDRAG_HIDEPS_ASSET.zip"
+$Sha256 = "955A86ABD0D78368F0551DAB702BF44E740686EE600E099CA22F258DDAC33819"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthLauncher"
 $TempRoot = Join-Path $env:TEMP "GodprojexthInstall"
@@ -110,6 +110,19 @@ function Minimize-ConsoleWindow {
     }
 }
 
+function Hide-ConsoleWindow {
+    try {
+        $handle = [GodprojexthAlphaNative]::GetConsoleWindow()
+
+        if ($handle -ne [IntPtr]::Zero) {
+            [GodprojexthAlphaNative]::ShowWindow($handle, 0) | Out-Null
+        }
+    }
+    catch {
+    }
+}
+
+
 function Initialize-Loader {
     try {
         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -147,9 +160,18 @@ function Safe-WriteLine {
 
     try {
         $width = [Console]::WindowWidth
+        $height = [Console]::WindowHeight
 
         if ($width -lt 60) {
             $width = 120
+        }
+
+        if ($height -le ($Top + 1)) {
+            return
+        }
+
+        if ([string]::IsNullOrEmpty($Text)) {
+            $Text = ""
         }
 
         if ($Text.Length -gt ($width - 1)) {
@@ -412,6 +434,24 @@ function Show-LoginGui {
     [System.Windows.Forms.Application]::EnableVisualStyles()
 
     try {
+        [System.Windows.Forms.Application]::SetUnhandledExceptionMode([System.Windows.Forms.UnhandledExceptionMode]::CatchException)
+        $script:GodprojexthUiErrorLog = Join-Path $env:TEMP "GODPROJEXTH_UI_ERROR.log"
+        [System.Windows.Forms.Application]::add_ThreadException({
+            param($sender, $eventArgs)
+
+            try {
+                $message = "[{0}] {1}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $eventArgs.Exception.Message
+                Add-Content -Path $script:GodprojexthUiErrorLog -Value $message -Encoding UTF8
+            }
+            catch {
+            }
+        })
+    }
+    catch {
+    }
+
+
+    try {
         [GodprojexthAlphaNative]::SetProcessDPIAware() | Out-Null
     }
     catch {
@@ -485,21 +525,48 @@ function Show-LoginGui {
         $script:AlphaDragForm = $Form
 
         $Control.Add_MouseDown({
-            if ($_.Button -eq [System.Windows.Forms.MouseButtons]::Left) {
-                $script:AlphaDragActive = $true
-                $script:AlphaDragMouseStart = [System.Windows.Forms.Control]::MousePosition
-                $script:AlphaDragFormStart = $script:AlphaDragForm.Location
+            try {
+                if ($_.Button -eq [System.Windows.Forms.MouseButtons]::Left) {
+                    $script:AlphaDragActive = $true
+                    $script:AlphaDragMouseStart = [System.Windows.Forms.Control]::MousePosition
+                    $script:AlphaDragFormStart = $script:AlphaDragForm.Location
 
-                try {
-                    $this.Capture = $true
+                    try {
+                        $this.Capture = $true
+                    }
+                    catch {
+                    }
                 }
-                catch {
-                }
+            }
+            catch {
+                $script:AlphaDragActive = $false
             }
         })
 
         $Control.Add_MouseMove({
-            if ($script:AlphaDragActive -eq $true -and $null -ne $script:AlphaDragForm) {
+            try {
+                if ($script:AlphaDragActive -ne $true) {
+                    return
+                }
+
+                if ($null -eq $script:AlphaDragForm) {
+                    $script:AlphaDragActive = $false
+                    return
+                }
+
+                if ($script:AlphaDragForm.IsDisposed) {
+                    $script:AlphaDragActive = $false
+                    return
+                }
+
+                $mouseButtons = [int][System.Windows.Forms.Control]::MouseButtons
+                $leftButton = [int][System.Windows.Forms.MouseButtons]::Left
+
+                if (($mouseButtons -band $leftButton) -eq 0) {
+                    $script:AlphaDragActive = $false
+                    return
+                }
+
                 $currentMouse = [System.Windows.Forms.Control]::MousePosition
                 $deltaX = $currentMouse.X - $script:AlphaDragMouseStart.X
                 $deltaY = $currentMouse.Y - $script:AlphaDragMouseStart.Y
@@ -509,20 +576,22 @@ function Show-LoginGui {
 
                 $script:AlphaDragForm.Location = New-Object System.Drawing.Point($newX, $newY)
             }
+            catch {
+                $script:AlphaDragActive = $false
+            }
         })
 
         $Control.Add_MouseUp({
-            $script:AlphaDragActive = $false
-
             try {
-                $this.Capture = $false
+                $script:AlphaDragActive = $false
+
+                try {
+                    $this.Capture = $false
+                }
+                catch {
+                }
             }
             catch {
-            }
-        })
-
-        $Control.Add_MouseLeave({
-            if ([System.Windows.Forms.Control]::MouseButtons -ne [System.Windows.Forms.MouseButtons]::Left) {
                 $script:AlphaDragActive = $false
             }
         })
@@ -1022,7 +1091,7 @@ function Show-LoginGui {
 
     $form.Add_Shown({
         $loginPanel.BringToFront()
-        Minimize-ConsoleWindow
+        Hide-ConsoleWindow
         Bring-LoginFront $form
         $frontTimer.Start()
         $keyBox.Focus()
