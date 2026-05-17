@@ -3,7 +3,7 @@ $ProgressPreference = "SilentlyContinue"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "FreedxmLauncher_GODPROJEXTH_TypedCredit.zip"
+$AssetName = "FreedxmLauncher_GODPROJEXTH_ExecPolicyFixed.zip"
 $Sha256 = "0773E76FF777B75A6687D5D305C0248C496CEE2A995D4F28E82CF36B114BEE39"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
@@ -304,6 +304,52 @@ function Show-GodprojexthCredit {
     }
 }
 
+function Start-LoginGui {
+    param(
+        [string]$GuiScriptPath
+    )
+
+    if (-not (Test-Path -LiteralPath $GuiScriptPath)) {
+        throw "GUI script was not found: $GuiScriptPath"
+    }
+
+    $powerShellExe = Join-Path $PSHOME "powershell.exe"
+
+    if (-not (Test-Path -LiteralPath $powerShellExe)) {
+        $powerShellExe = "powershell.exe"
+    }
+
+    $encodedGuiPath = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($GuiScriptPath))
+
+    $guiCommand = @"
+`$ErrorActionPreference = 'Stop'
+`$ProgressPreference = 'SilentlyContinue'
+`$bytes = [Convert]::FromBase64String('$encodedGuiPath')
+`$guiPath = [System.Text.Encoding]::Unicode.GetString(`$bytes)
+`$code = [System.IO.File]::ReadAllText(`$guiPath, [System.Text.Encoding]::UTF8)
+Invoke-Expression `$code
+"@
+
+    $encodedCommand = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($guiCommand))
+
+    $argumentList = @(
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-STA",
+        "-EncodedCommand",
+        $encodedCommand
+    )
+
+    $process = Start-Process -FilePath $powerShellExe -ArgumentList $argumentList -WindowStyle Normal -PassThru
+
+    if (-not $process) {
+        throw "Cannot start GUI PowerShell process."
+    }
+
+    return $process
+}
+
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
@@ -370,13 +416,15 @@ try {
         throw "FreedxmLauncher.ps1 was not found after install."
     }
 
+    Start-LoginGui -GuiScriptPath $GuiScript.FullName | Out-Null
+
+    Start-Sleep -Milliseconds 1200
+
     $ConsoleWindow = [FreedxmLoaderWindow]::GetConsoleWindow()
 
     if ($ConsoleWindow -ne [IntPtr]::Zero) {
-        [FreedxmLoaderWindow]::ShowWindow($ConsoleWindow, 0) | Out-Null
+        [FreedxmLoaderWindow]::ShowWindow($ConsoleWindow, 6) | Out-Null
     }
-
-    & $GuiScript.FullName
 
     try {
         [Console]::CursorVisible = $true
