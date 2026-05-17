@@ -2,8 +2,8 @@ $ErrorActionPreference = "Stop"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "FreedxmLauncher_CleanLogin.zip"
-$Sha256 = "914D675AC1ED0EB724D27473FF3473171F4537E5303D2537C3FBED6E9BBEA588"
+$AssetName = "FreedxmLauncher_FinalClean.zip"
+$Sha256 = "798FBD0FB350A8D278B237ED88F2E82300866997D2CB41D108B2563987904404"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
 $TempRoot = Join-Path $env:TEMP "FreedxmLauncherInstall"
