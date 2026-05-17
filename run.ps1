@@ -3,8 +3,8 @@ $ProgressPreference = "SilentlyContinue"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "FreedxmLauncher_GodprojexthCredit.zip"
-$Sha256 = "D875AC5FC9C45AF40C876C0CEB88D88895A964A68CE8B31E5E5288FE6317C934"
+$AssetName = "FreedxmLauncher_GODPROJEXTH_TypedCredit.zip"
+$Sha256 = "0773E76FF777B75A6687D5D305C0248C496CEE2A995D4F28E82CF36B114BEE39"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
 $TempRoot = Join-Path $env:TEMP "FreedxmLauncherInstall"
@@ -49,7 +49,7 @@ function Initialize-Loader {
     Write-Host ""
     Write-Host "  Frame  : 0000" -ForegroundColor DarkGray
     Write-Host ""
-    Write-Host "  Login GUI will open after GODPROJEXTH credit." -ForegroundColor DarkGray
+    Write-Host "  Login GUI opens after GODPROJEXTH credit." -ForegroundColor DarkGray
 }
 
 function Safe-WriteLine {
@@ -203,48 +203,102 @@ function Download-FileSmooth {
     }
 }
 
+function Get-PixelWord {
+    $font = @{}
+
+    $font["G"] = @(" ### ","#    ","#  ##","#   #"," ### ")
+    $font["O"] = @(" ### ","#   #","#   #","#   #"," ### ")
+    $font["D"] = @("#### ","#   #","#   #","#   #","#### ")
+    $font["P"] = @("#### ","#   #","#### ","#    ","#    ")
+    $font["R"] = @("#### ","#   #","#### ","#  # ","#   #")
+    $font["J"] = @("  ###","   # ","   # ","#  # "," ##  ")
+    $font["E"] = @("#####","#    ","#### ","#    ","#####")
+    $font["X"] = @("#   #"," # # ","  #  "," # # ","#   #")
+    $font["T"] = @("#####","  #  ","  #  ","  #  ","  #  ")
+    $font["H"] = @("#   #","#   #","#####","#   #","#   #")
+
+    $word = "GODPROJEXTH"
+    $lines = @("", "", "", "", "")
+
+    foreach ($char in $word.ToCharArray()) {
+        $glyph = $font[[string]$char]
+
+        for ($i = 0; $i -lt 5; $i++) {
+            $lines[$i] += $glyph[$i] + "  "
+        }
+    }
+
+    return $lines
+}
+
 function Show-GodprojexthCredit {
     param([ref]$FrameRef)
 
-    $art = @(
-        "  ####   ###  ####  ####  ####   ###   ###  #### #   # ##### #   #",
-        " #      #   # #   # #   # #   # #   #   #   #    #   #   #   #   #",
-        " #  ##  #   # #   # ####  ####  #   #   #   ###   #####   #   #####",
-        " #   #  #   # #   # #     #  #  #   #   #   #      # #    #   #   #",
-        "  ####   ###  ####  #     #   #  ###  ###   ####   # #    #   #   #"
-    )
-
     Clear-Host
+
+    $art = Get-PixelWord
+    $maxLength = ($art | ForEach-Object { $_.Length } | Measure-Object -Maximum).Maximum
 
     Write-Host ""
     Write-Host ""
     Write-Host "        CREDIT" -ForegroundColor DarkYellow
     Write-Host ""
 
-    for ($cycle = 0; $cycle -lt 42; $cycle++) {
-        $lineTop = 4
-
+    for ($column = 1; $column -le $maxLength; $column++) {
         for ($i = 0; $i -lt $art.Count; $i++) {
-            $colorIndex = ($cycle + $i) % 4
+            $sourceLine = $art[$i]
 
-            if ($colorIndex -eq 0) {
+            if ($column -gt $sourceLine.Length) {
+                $part = $sourceLine
+            }
+            else {
+                $part = $sourceLine.Substring(0, $column)
+            }
+
+            $colorStep = ($i + [Math]::Floor($column / 3)) % 4
+
+            if ($colorStep -eq 0) {
                 $color = [System.ConsoleColor]::DarkYellow
             }
-            elseif ($colorIndex -eq 1) {
+            elseif ($colorStep -eq 1) {
                 $color = [System.ConsoleColor]::Yellow
             }
-            elseif ($colorIndex -eq 2) {
+            elseif ($colorStep -eq 2) {
                 $color = [System.ConsoleColor]::White
             }
             else {
                 $color = [System.ConsoleColor]::Yellow
             }
 
-            Safe-WriteLine -Top ($lineTop + $i) -Text $art[$i] -Color $color
+            Safe-WriteLine -Top (4 + $i) -Text ("        " + $part) -Color $color
         }
 
-        Safe-WriteLine -Top 11 -Text ("        Pixel gradient credit loading login... frame {0:0000}" -f $FrameRef.Value) -Color DarkGray
+        Safe-WriteLine -Top 11 -Text ("        Typing GODPROJEXTH credit... frame {0:0000}" -f $FrameRef.Value) -Color DarkGray
+        $FrameRef.Value++
+        Start-Sleep -Milliseconds 28
+    }
 
+    for ($glow = 0; $glow -lt 55; $glow++) {
+        for ($i = 0; $i -lt $art.Count; $i++) {
+            $colorStep = ($glow + $i) % 4
+
+            if ($colorStep -eq 0) {
+                $color = [System.ConsoleColor]::DarkYellow
+            }
+            elseif ($colorStep -eq 1) {
+                $color = [System.ConsoleColor]::Yellow
+            }
+            elseif ($colorStep -eq 2) {
+                $color = [System.ConsoleColor]::White
+            }
+            else {
+                $color = [System.ConsoleColor]::Yellow
+            }
+
+            Safe-WriteLine -Top (4 + $i) -Text ("        " + $art[$i]) -Color $color
+        }
+
+        Safe-WriteLine -Top 11 -Text ("        Opening login interface... frame {0:0000}" -f $FrameRef.Value) -Color DarkGray
         $FrameRef.Value++
         Start-Sleep -Milliseconds 16
     }
@@ -316,17 +370,13 @@ try {
         throw "FreedxmLauncher.ps1 was not found after install."
     }
 
-    $ArgumentList = "-STA -NoProfile -ExecutionPolicy Bypass -File `"$($GuiScript.FullName)`""
-
-    Start-Process -FilePath "powershell.exe" -ArgumentList $ArgumentList -WindowStyle Normal
-
-    Start-Sleep -Milliseconds 900
-
     $ConsoleWindow = [FreedxmLoaderWindow]::GetConsoleWindow()
 
     if ($ConsoleWindow -ne [IntPtr]::Zero) {
-        [FreedxmLoaderWindow]::ShowWindow($ConsoleWindow, 6) | Out-Null
+        [FreedxmLoaderWindow]::ShowWindow($ConsoleWindow, 0) | Out-Null
     }
+
+    & $GuiScript.FullName
 
     try {
         [Console]::CursorVisible = $true
@@ -339,6 +389,12 @@ catch {
         [Console]::CursorVisible = $true
     }
     catch {
+    }
+
+    $ConsoleWindow = [FreedxmLoaderWindow]::GetConsoleWindow()
+
+    if ($ConsoleWindow -ne [IntPtr]::Zero) {
+        [FreedxmLoaderWindow]::ShowWindow($ConsoleWindow, 5) | Out-Null
     }
 
     Clear-Host
