@@ -1,16 +1,18 @@
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-$RunUrl = "https://raw.githubusercontent.com/Wxyuz/GodprojexthLauncher/main/run.ps1"
+$RunUrl = "https://raw.githubusercontent.com/Wxyuz/GodprojexthLauncher/main/ALPHA.ps"
 
-if ($env:FREEDXM_STA_RELAUNCHED -ne "1") {
+if ($env:GODPROJEXTH_ALPHA_STA_RELAUNCHED -ne "1") {
     try {
         $apartment = [System.Threading.Thread]::CurrentThread.GetApartmentState()
 
         if ($apartment -ne [System.Threading.ApartmentState]::STA) {
-            $env:FREEDXM_STA_RELAUNCHED = "1"
+            $env:GODPROJEXTH_ALPHA_STA_RELAUNCHED = "1"
+
             $relay = "iex (iwr -UseBasicParsing '$RunUrl')"
             $encodedRelay = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($relay))
+
             $powerShellExe = Join-Path $PSHOME "powershell.exe"
 
             if (-not (Test-Path -LiteralPath $powerShellExe)) {
@@ -33,21 +35,22 @@ if ($env:FREEDXM_STA_RELAUNCHED -ne "1") {
     }
 }
 
+$BrandName = "GODPROJEXTH"
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "FreedxmLauncher_GOLD_VISIBLE_LOGIN_WORKING.zip"
-$Sha256 = "C3D7FF26E3924A26578D4789322BD95CD961718C001A7C6B472402461410CF23"
+$AssetName = "Godprojexth_ALPHA_ASSET.zip"
+$Sha256 = "7CC5C9717C2DD6BE85569A5736234C9DED64397BA47D79D4D6AC051AF592FA83"
 
-$InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
-$TempRoot = Join-Path $env:TEMP "FreedxmLauncherInstall"
-$TempZip = Join-Path $TempRoot "FreedxmLauncher.zip"
+$InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthLauncher"
+$TempRoot = Join-Path $env:TEMP "GodprojexthInstall"
+$TempZip = Join-Path $TempRoot "GodprojexthAlpha.zip"
 
-if (-not ("FreedxmVisibleNativeV9" -as [type])) {
+if (-not ("GodprojexthAlphaNative" -as [type])) {
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
 
-public static class FreedxmVisibleNativeV9
+public static class GodprojexthAlphaNative
 {
     [DllImport("kernel32.dll")]
     public static extern IntPtr GetConsoleWindow();
@@ -85,10 +88,10 @@ public static class FreedxmVisibleNativeV9
 
 function Show-ConsoleWindow {
     try {
-        $handle = [FreedxmVisibleNativeV9]::GetConsoleWindow()
+        $handle = [GodprojexthAlphaNative]::GetConsoleWindow()
 
         if ($handle -ne [IntPtr]::Zero) {
-            [FreedxmVisibleNativeV9]::ShowWindow($handle, 5) | Out-Null
+            [GodprojexthAlphaNative]::ShowWindow($handle, 5) | Out-Null
         }
     }
     catch {
@@ -97,10 +100,10 @@ function Show-ConsoleWindow {
 
 function Minimize-ConsoleWindow {
     try {
-        $handle = [FreedxmVisibleNativeV9]::GetConsoleWindow()
+        $handle = [GodprojexthAlphaNative]::GetConsoleWindow()
 
         if ($handle -ne [IntPtr]::Zero) {
-            [FreedxmVisibleNativeV9]::ShowWindow($handle, 6) | Out-Null
+            [GodprojexthAlphaNative]::ShowWindow($handle, 6) | Out-Null
         }
     }
     catch {
@@ -123,8 +126,8 @@ function Initialize-Loader {
     Clear-Host
 
     Write-Host ""
-    Write-Host "  FREEDXM LAUNCHER" -ForegroundColor Yellow
-    Write-Host "  Gold Visible Login Working" -ForegroundColor DarkYellow
+    Write-Host "  GODPROJEXTH ALPHA" -ForegroundColor Yellow
+    Write-Host "  Gold Visible Login Loader" -ForegroundColor DarkYellow
     Write-Host ""
     Write-Host "  Status : Preparing..." -ForegroundColor Yellow
     Write-Host ""
@@ -132,7 +135,7 @@ function Initialize-Loader {
     Write-Host ""
     Write-Host "  Frame  : 0000" -ForegroundColor DarkYellow
     Write-Host ""
-    Write-Host "  Loading data, then opening Login GUI in the same PowerShell session." -ForegroundColor DarkYellow
+    Write-Host "  Loading data, then opening GODPROJEXTH Login GUI." -ForegroundColor DarkYellow
 }
 
 function Safe-WriteLine {
@@ -396,7 +399,7 @@ function Show-GoldGodCredit {
             Safe-WriteLine -Top (4 + $row) -Text ("  " + $art[$row]) -Color $color
         }
 
-        Safe-WriteLine -Top 11 -Text ("  Opening Login GUI... frame {0:0000}" -f $FrameRef.Value) -Color DarkYellow
+        Safe-WriteLine -Top 11 -Text ("  Opening GODPROJEXTH Login GUI... frame {0:0000}" -f $FrameRef.Value) -Color DarkYellow
         $FrameRef.Value++
         Start-Sleep -Milliseconds 16
     }
@@ -409,7 +412,7 @@ function Show-LoginGui {
     [System.Windows.Forms.Application]::EnableVisualStyles()
 
     try {
-        [FreedxmVisibleNativeV9]::SetProcessDPIAware() | Out-Null
+        [GodprojexthAlphaNative]::SetProcessDPIAware() | Out-Null
     }
     catch {
     }
@@ -457,7 +460,7 @@ function Show-LoginGui {
         }
 
         $round = [Math]::Max(2, (U $Radius))
-        $regionPointer = [FreedxmVisibleNativeV9]::CreateRoundRectRgn(
+        $regionPointer = [GodprojexthAlphaNative]::CreateRoundRectRgn(
             0,
             0,
             $Control.Width + 1,
@@ -477,8 +480,8 @@ function Show-LoginGui {
 
         $Control.Add_MouseDown({
             if ($_.Button -eq [System.Windows.Forms.MouseButtons]::Left) {
-                [FreedxmVisibleNativeV9]::ReleaseCapture() | Out-Null
-                [FreedxmVisibleNativeV9]::SendMessage($Form.Handle, 0xA1, 0x2, 0) | Out-Null
+                [GodprojexthAlphaNative]::ReleaseCapture() | Out-Null
+                [GodprojexthAlphaNative]::SendMessage($Form.Handle, 0xA1, 0x2, 0) | Out-Null
             }
         })
     }
@@ -492,14 +495,14 @@ function Show-LoginGui {
             $Form.Activate()
             $Form.Focus()
             $Form.BringToFront()
-            [FreedxmVisibleNativeV9]::BringWindowToTop($Form.Handle) | Out-Null
-            [FreedxmVisibleNativeV9]::SetForegroundWindow($Form.Handle) | Out-Null
+            [GodprojexthAlphaNative]::BringWindowToTop($Form.Handle) | Out-Null
+            [GodprojexthAlphaNative]::SetForegroundWindow($Form.Handle) | Out-Null
         }
         catch {
         }
     }
 
-    function Label {
+    function New-UiLabel {
         param(
             [string]$Text,
             [int]$X,
@@ -530,7 +533,7 @@ function Show-LoginGui {
         return $label
     }
 
-    function Panel {
+    function New-UiPanel {
         param(
             [int]$X,
             [int]$Y,
@@ -558,7 +561,7 @@ function Show-LoginGui {
         return $panel
     }
 
-    function Button {
+    function New-UiButton {
         param(
             [string]$Text,
             [int]$X,
@@ -591,11 +594,20 @@ function Show-LoginGui {
             Set-Round -Control $button -Radius $Radius
         })
 
+        $button.Add_MouseEnter({
+            $button.FlatAppearance.BorderSize = 1
+            $button.FlatAppearance.BorderColor = New-C "#93C5FD"
+        })
+
+        $button.Add_MouseLeave({
+            $button.FlatAppearance.BorderSize = 0
+        })
+
         return $button
     }
 
     $form = New-Object System.Windows.Forms.Form
-    $form.Text = "Freedxm Launcher"
+    $form.Text = "GODPROJEXTH ALPHA"
     $form.Size = New-Object System.Drawing.Size((U $baseWidth), (U $baseHeight))
     $form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
     $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::None
@@ -613,49 +625,54 @@ function Show-LoginGui {
         Set-Round -Control $form -Radius 34
     })
 
-    $root = Panel 0 0 430 640 "#020617" 34
+    $root = New-UiPanel 0 0 430 640 "#020617" 34
     $root.Dock = [System.Windows.Forms.DockStyle]::Fill
     $form.Controls.Add($root)
+    Enable-Drag -Control $root -Form $form
 
-    $main = Panel 10 10 410 620 "#050910" 30
+    $main = New-UiPanel 10 10 410 620 "#050910" 30
     $root.Controls.Add($main)
+    Enable-Drag -Control $main -Form $form
 
-    $header = Panel 16 16 378 54 "#0B1220" 18
+    $header = New-UiPanel 16 16 378 54 "#0B1220" 18
     $main.Controls.Add($header)
     Enable-Drag -Control $header -Form $form
 
-    $logo = Panel 14 14 26 26 "#5FA0FF" 9
+    $logo = New-UiPanel 14 14 26 26 "#5FA0FF" 9
     $header.Controls.Add($logo)
-    $logo.Controls.Add((Label "N" 7 3 16 18 10 "#FFFFFF" $true))
+    Enable-Drag -Control $logo -Form $form
+    $logo.Controls.Add((New-UiLabel "G" 7 3 16 18 10 "#FFFFFF" $true))
 
-    $brand = Label "NEVER" 52 15 120 22 11 "#FFFFFF" $true
+    $brand = New-UiLabel "GODPROJEXTH" 52 15 178 22 11 "#FFFFFF" $true
     $header.Controls.Add($brand)
     Enable-Drag -Control $brand -Form $form
 
-    $min = Button "-" 272 11 30 30 "#111827" "#94A3B8" 10
-    $close = Button "x" 306 11 30 30 "#111827" "#94A3B8" 10
-    $theme = Button "moon" 340 7 32 40 "#5FA0FF" "#07111F" 12
-    $theme.Font = New-Font -Size 7.5 -Style ([System.Drawing.FontStyle]::Bold)
+    $minButton = New-UiButton "-" 272 11 30 30 "#111827" "#94A3B8" 10
+    $closeButton = New-UiButton "x" 306 11 30 30 "#111827" "#94A3B8" 10
+    $themeButton = New-UiButton "moon" 340 7 32 40 "#5FA0FF" "#07111F" 12
+    $themeButton.Font = New-Font -Size 7.5 -Style ([System.Drawing.FontStyle]::Bold)
 
-    $header.Controls.Add($min)
-    $header.Controls.Add($close)
-    $header.Controls.Add($theme)
+    $header.Controls.Add($minButton)
+    $header.Controls.Add($closeButton)
+    $header.Controls.Add($themeButton)
 
-    $min.Add_Click({
+    $minButton.Add_Click({
         $form.WindowState = [System.Windows.Forms.FormWindowState]::Minimized
     })
 
-    $close.Add_Click({
+    $closeButton.Add_Click({
         $form.Close()
     })
 
-    $body = Panel 16 82 378 510 "#050910" 0
+    $body = New-UiPanel 16 82 378 510 "#050910" 0
     $main.Controls.Add($body)
+    Enable-Drag -Control $body -Form $form
 
     $loginPanel = New-Object System.Windows.Forms.Panel
     $loginPanel.Dock = [System.Windows.Forms.DockStyle]::Fill
     $loginPanel.BackColor = New-C "#050910"
     $body.Controls.Add($loginPanel)
+    Enable-Drag -Control $loginPanel -Form $form
 
     $modePanel = New-Object System.Windows.Forms.Panel
     $modePanel.Dock = [System.Windows.Forms.DockStyle]::Fill
@@ -663,30 +680,53 @@ function Show-LoginGui {
     $modePanel.Visible = $false
     $body.Controls.Add($modePanel)
 
-    $hero = Panel 10 4 358 168 "#08111F" 18
+    $hero = New-UiPanel 10 4 358 168 "#08111F" 18
     $loginPanel.Controls.Add($hero)
-    $heroInner = Panel 8 8 342 152 "#0A1A2C" 14
+    Enable-Drag -Control $hero -Form $form
+
+    $heroInner = New-UiPanel 8 8 342 152 "#0A1A2C" 14
     $hero.Controls.Add($heroInner)
+    Enable-Drag -Control $heroInner -Form $form
 
-    $heroInner.Controls.Add((Label "----    ----    -----" 120 12 156 18 7.5 "#CBD5E1"))
-    $heroInner.Controls.Add((Label "NEVERSTORE" 22 34 180 22 14 "#6B7C93" $true))
-    $heroInner.Controls.Add((Label "launcher interface" 24 53 132 12 6.5 "#475569"))
-    $heroInner.Controls.Add((Label "Mode" 22 72 125 32 23 "#667085"))
-    $heroInner.Controls.Add((Label "Hyper" 22 100 160 36 29 "#8190A5"))
-    $heroInner.Controls.Add((Label "BOTTLE" 22 130 100 18 9 "#FFFFFF" $true))
-    $heroInner.Controls.Add((Label "Stable visible login window,`nand cleaner aligned layout." 22 143 300 28 7 "#A3B1C6"))
+    $heroTabs = New-UiLabel "----    ----    -----" 120 12 156 18 7.5 "#CBD5E1"
+    $heroInner.Controls.Add($heroTabs)
+    Enable-Drag -Control $heroTabs -Form $form
 
-    $welcome = Label "Welcome Back!" 0 188 378 28 16 "#FFFFFF" $true
+    $heroBrand = New-UiLabel "GODPROJEXTH" 22 34 180 22 14 "#6B7C93" $true
+    $heroSmall = New-UiLabel "alpha launcher interface" 24 53 190 12 6.5 "#475569"
+    $heroMode = New-UiLabel "Mode" 22 72 125 32 23 "#667085"
+    $heroHyper = New-UiLabel "Hyper" 22 100 160 36 29 "#8190A5"
+    $heroBottle = New-UiLabel "BOTTLE" 22 130 100 18 9 "#FFFFFF" $true
+    $heroDescription = New-UiLabel "Stable rounded login window,`ndrag anywhere and clean layout." 22 143 300 28 7 "#A3B1C6"
+
+    $heroInner.Controls.Add($heroBrand)
+    $heroInner.Controls.Add($heroSmall)
+    $heroInner.Controls.Add($heroMode)
+    $heroInner.Controls.Add($heroHyper)
+    $heroInner.Controls.Add($heroBottle)
+    $heroInner.Controls.Add($heroDescription)
+
+    Enable-Drag -Control $heroBrand -Form $form
+    Enable-Drag -Control $heroSmall -Form $form
+    Enable-Drag -Control $heroMode -Form $form
+    Enable-Drag -Control $heroHyper -Form $form
+    Enable-Drag -Control $heroBottle -Form $form
+    Enable-Drag -Control $heroDescription -Form $form
+
+    $welcome = New-UiLabel "Welcome Back!" 0 188 378 28 16 "#FFFFFF" $true
     $welcome.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
     $loginPanel.Controls.Add($welcome)
+    Enable-Drag -Control $welcome -Form $form
 
-    $sub = Label "Please enter your key to continue." 0 216 378 18 9 "#94A3B8"
+    $sub = New-UiLabel "Please enter your key to continue." 0 216 378 18 9 "#94A3B8"
     $sub.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
     $loginPanel.Controls.Add($sub)
+    Enable-Drag -Control $sub -Form $form
 
-    $keyPanel = Panel 10 254 358 48 "#0B1220" 16
+    $keyPanel = New-UiPanel 10 254 358 48 "#0B1220" 18
     $loginPanel.Controls.Add($keyPanel)
-    $keyPanel.Controls.Add((Label "key" 16 13 34 22 8 "#64748B"))
+
+    $keyPanel.Controls.Add((New-UiLabel "key" 16 13 34 22 8 "#64748B"))
 
     $keyBox = New-Object System.Windows.Forms.TextBox
     $keyBox.Location = New-Object System.Drawing.Point((U 56), (U 14))
@@ -714,43 +754,46 @@ function Show-LoginGui {
         }
     })
 
-    $status = Label "" 10 306 358 18 8 "#F87171"
+    $status = New-UiLabel "" 10 306 358 18 8 "#F87171"
     $status.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
     $loginPanel.Controls.Add($status)
 
-    $loginPanel.Controls.Add((Label "Forgot key?" 220 333 78 18 9 "#FFFFFF" $true))
-    $support = Label "Support" 298 333 62 18 9 "#60A5FA" $true
+    $forgot = New-UiLabel "Forgot key?" 220 333 78 18 9 "#FFFFFF" $true
+    $support = New-UiLabel "Support" 298 333 62 18 9 "#60A5FA" $true
     $support.Cursor = [System.Windows.Forms.Cursors]::Hand
     $support.Add_Click({
         Start-Process "https://github.com/Wxyuz/GodprojexthLauncher"
     })
 
+    $loginPanel.Controls.Add($forgot)
     $loginPanel.Controls.Add($support)
 
-    $signin = Button "Sign In" 10 372 358 44 "#5FA0FF" "#07111F" 16
-    $loginPanel.Controls.Add($signin)
+    $signIn = New-UiButton "Sign In" 10 372 358 44 "#5FA0FF" "#07111F" 18
+    $loginPanel.Controls.Add($signIn)
 
-    $dot = Label "." 184 454 14 14 6 "#334155"
-    $footer = Label "2025 Never. All rights reserved." 0 472 378 16 7 "#64748B"
+    $dot = New-UiLabel "." 184 454 14 14 6 "#334155"
+    $footer = New-UiLabel "2025 GODPROJEXTH. All rights reserved." 0 472 378 16 7 "#64748B"
     $footer.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
     $loginPanel.Controls.Add($dot)
     $loginPanel.Controls.Add($footer)
+    Enable-Drag -Control $footer -Form $form
+    Enable-Drag -Control $dot -Form $form
 
-    $modeTitle = Label "Select Mode" 0 44 378 28 16 "#FFFFFF" $true
+    $modeTitle = New-UiLabel "Select Mode" 0 44 378 28 16 "#FFFFFF" $true
     $modeTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
-    $modeSub = Label "Choose your preferred profile." 0 72 378 18 9 "#94A3B8"
+    $modeSub = New-UiLabel "Choose your preferred profile." 0 72 378 18 9 "#94A3B8"
     $modeSub.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
 
     $modePanel.Controls.Add($modeTitle)
     $modePanel.Controls.Add($modeSub)
 
     $script:selectedMode = "NORMAL"
-    $modeSelected = Label "Selected: NORMAL" 0 242 378 20 10 "#60A5FA" $true
+    $modeSelected = New-UiLabel "Selected: NORMAL" 0 242 378 20 10 "#60A5FA" $true
     $modeSelected.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
 
-    $modeLeft = Button "BOTTLE" 18 132 96 76 "#0B1220" "#CBD5E1" 20
-    $modeCenter = Button "NORMAL" 141 120 96 100 "#1E293B" "#FFFFFF" 20
-    $modeRight = Button "HYPER" 264 132 96 76 "#0B1220" "#64748B" 20
+    $modeLeft = New-UiButton "BOTTLE" 18 132 96 76 "#0B1220" "#CBD5E1" 20
+    $modeCenter = New-UiButton "NORMAL" 141 120 96 100 "#1E293B" "#FFFFFF" 20
+    $modeRight = New-UiButton "HYPER" 264 132 96 76 "#0B1220" "#64748B" 20
 
     $modePanel.Controls.Add($modeLeft)
     $modePanel.Controls.Add($modeCenter)
@@ -758,10 +801,10 @@ function Show-LoginGui {
     $modePanel.Controls.Add($modeSelected)
 
     function SetMode {
-        param([string]$m)
+        param([string]$modeName)
 
-        $script:selectedMode = $m
-        $modeSelected.Text = "Selected: $m"
+        $script:selectedMode = $modeName
+        $modeSelected.Text = "Selected: $modeName"
 
         $modeLeft.BackColor = New-C "#0B1220"
         $modeCenter.BackColor = New-C "#0B1220"
@@ -771,17 +814,17 @@ function Show-LoginGui {
         $modeCenter.ForeColor = New-C "#CBD5E1"
         $modeRight.ForeColor = New-C "#64748B"
 
-        if ($m -eq "BOTTLE") {
+        if ($modeName -eq "BOTTLE") {
             $modeLeft.BackColor = New-C "#1E293B"
             $modeLeft.ForeColor = [System.Drawing.Color]::White
         }
 
-        if ($m -eq "NORMAL") {
+        if ($modeName -eq "NORMAL") {
             $modeCenter.BackColor = New-C "#1E293B"
             $modeCenter.ForeColor = [System.Drawing.Color]::White
         }
 
-        if ($m -eq "HYPER") {
+        if ($modeName -eq "HYPER") {
             $modeRight.BackColor = New-C "#1E293B"
             $modeRight.ForeColor = [System.Drawing.Color]::White
         }
@@ -791,18 +834,18 @@ function Show-LoginGui {
     $modeCenter.Add_Click({ SetMode "NORMAL" })
     $modeRight.Add_Click({ SetMode "HYPER" })
 
-    $load = Button "Load" 38 302 302 44 "#5FA0FF" "#07111F" 16
-    $clean = Button "Clean" 38 358 302 44 "#111827" "#CBD5E1" 16
-    $website = Button "WEBSITE" 38 414 302 44 "#5FA0FF" "#07111F" 16
+    $loadButton = New-UiButton "Load" 38 302 302 44 "#5FA0FF" "#07111F" 18
+    $cleanButton = New-UiButton "Clean" 38 358 302 44 "#111827" "#CBD5E1" 18
+    $websiteButton = New-UiButton "WEBSITE" 38 414 302 44 "#5FA0FF" "#07111F" 18
 
-    $modePanel.Controls.Add($load)
-    $modePanel.Controls.Add($clean)
-    $modePanel.Controls.Add($website)
+    $modePanel.Controls.Add($loadButton)
+    $modePanel.Controls.Add($cleanButton)
+    $modePanel.Controls.Add($websiteButton)
 
-    $activity = Panel 10 268 358 218 "#090F19" 18
+    $activity = New-UiPanel 10 268 358 218 "#090F19" 18
     $activity.Visible = $false
     $modePanel.Controls.Add($activity)
-    $activity.Controls.Add((Label "Activity" 14 12 120 18 10 "#FFFFFF" $true))
+    $activity.Controls.Add((New-UiLabel "Activity" 14 12 120 18 10 "#FFFFFF" $true))
 
     $activityBox = New-Object System.Windows.Forms.TextBox
     $activityBox.Location = New-Object System.Drawing.Point((U 14), (U 40))
@@ -842,18 +885,18 @@ function Show-LoginGui {
     })
 
     function StartActivity {
-        param([string[]]$l)
+        param([string[]]$linesToRun)
 
         $activity.Visible = $true
         $activity.BringToFront()
         $activityBox.Clear()
         $progress.Value = 0
-        $script:lines = $l
+        $script:lines = $linesToRun
         $script:index = 0
         $timer.Start()
     }
 
-    $signin.Add_Click({
+    $signIn.Add_Click({
         $entered = $keyBox.Text.Trim()
 
         if ($entered -eq "" -or $entered -eq "Key") {
@@ -861,7 +904,7 @@ function Show-LoginGui {
             return
         }
 
-        $valid = @("freedxm", "NEVER-2026", "WXYU-KEY", "GODPROJEXTH")
+        $valid = @("GODPROJEXTH", "ALPHA", "WXYU-KEY", "NEVER-2026")
 
         if ($valid -contains $entered) {
             $status.Text = ""
@@ -876,13 +919,13 @@ function Show-LoginGui {
 
     $keyBox.Add_KeyDown({
         if ($_.KeyCode -eq [System.Windows.Forms.Keys]::Enter) {
-            $signin.PerformClick()
+            $signIn.PerformClick()
         }
     })
 
-    $load.Add_Click({
+    $loadButton.Add_Click({
         StartActivity @(
-            "[SYSTEM] Starting launcher...",
+            "[SYSTEM] Starting GODPROJEXTH ALPHA...",
             "[MODE] Selected mode: $script:selectedMode",
             "[CHECK] Checking local config...",
             "[CHECK] Verifying files...",
@@ -892,7 +935,7 @@ function Show-LoginGui {
         )
     })
 
-    $clean.Add_Click({
+    $cleanButton.Add_Click({
         StartActivity @(
             "[CLEAN] Starting cleanup...",
             "[CLEAN] Clearing temporary cache...",
@@ -901,18 +944,18 @@ function Show-LoginGui {
         )
     })
 
-    $website.Add_Click({
+    $websiteButton.Add_Click({
         Start-Process "https://github.com/Wxyuz/GodprojexthLauncher"
     })
 
-    $theme.Add_Click({
-        if ($theme.Text -eq "moon") {
-            $theme.Text = "dark"
-            $theme.BackColor = New-C "#93C5FD"
+    $themeButton.Add_Click({
+        if ($themeButton.Text -eq "moon") {
+            $themeButton.Text = "dark"
+            $themeButton.BackColor = New-C "#93C5FD"
         }
         else {
-            $theme.Text = "moon"
-            $theme.BackColor = New-C "#5FA0FF"
+            $themeButton.Text = "moon"
+            $themeButton.BackColor = New-C "#5FA0FF"
         }
     })
 
@@ -966,7 +1009,7 @@ try {
     $progress = Animate-ToPercent -From $progress -To 8 -Status "Connecting to release..." -FrameRef ([ref]$frame)
 
     $Headers = @{
-        "User-Agent" = "FreedxmLauncherInstaller"
+        "User-Agent" = "GodprojexthAlphaInstaller"
     }
 
     $ReleaseApi = "https://api.github.com/repos/$Owner/$Repo/releases/latest"
@@ -1000,7 +1043,7 @@ try {
     $ExpectedHash = $Sha256.ToUpperInvariant()
 
     if ($ActualHash -ne $ExpectedHash) {
-        throw "SHA256 mismatch for $AssetName.`nExpected: $ExpectedHash`nActual:   $ActualHash`nFix: upload the new ZIP file again, then commit this run.ps1."
+        throw "SHA256 mismatch for $AssetName.`nExpected: $ExpectedHash`nActual:   $ActualHash`nFix: upload the new ZIP file again, then commit ALPHA.ps."
     }
 
     $progress = Animate-ToPercent -From $progress -To 84 -Status "Installing launcher files..." -FrameRef ([ref]$frame)
@@ -1027,7 +1070,7 @@ catch {
 
     Clear-Host
     Write-Host ""
-    Write-Host "  FREEDXM LAUNCHER ERROR" -ForegroundColor Red
+    Write-Host "  GODPROJEXTH ALPHA ERROR" -ForegroundColor Red
     Write-Host ""
     Write-Host "  $($_.Exception.Message)" -ForegroundColor Red
     Write-Host ""
