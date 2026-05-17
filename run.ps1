@@ -3,19 +3,19 @@ $ProgressPreference = "SilentlyContinue"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "FreedxmLauncher_FORMSFIX_LOGIN_WORKING.zip"
-$Sha256 = "E4EF4F902CBB38E307CF330188806D5DA89E9499D0520EA3447DF5AF4B6F5EF8"
+$AssetName = "FreedxmLauncher_FRONTFIX_READYX_STYLE.zip"
+$Sha256 = "BBA6B898788D4C6EF38598F63EA223D73D8AE4C5A4C0AEA3834B3CBA6A6ADA44"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
 $TempRoot = Join-Path $env:TEMP "FreedxmLauncherInstall"
 $TempZip = Join-Path $TempRoot "FreedxmLauncher.zip"
 
-if (-not ("FreedxmNativeFormsFixV1" -as [type])) {
+if (-not ("FreedxmNativeFrontFixV2" -as [type])) {
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
 
-public static class FreedxmNativeFormsFixV1
+public static class FreedxmNativeFrontFixV2
 {
     [DllImport("kernel32.dll")]
     public static extern IntPtr GetConsoleWindow();
@@ -41,23 +41,46 @@ public static class FreedxmNativeFormsFixV1
 
     [DllImport("user32.dll")]
     public static extern bool SetProcessDPIAware();
+
+    [DllImport("user32.dll")]
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool BringWindowToTop(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool SetActiveWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool SetFocus(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool SetWindowPos(
+        IntPtr hWnd,
+        IntPtr hWndInsertAfter,
+        int X,
+        int Y,
+        int cx,
+        int cy,
+        uint uFlags
+    );
 }
 "@
 }
 
 function Show-ConsoleWindow {
-    $handle = [FreedxmNativeFormsFixV1]::GetConsoleWindow()
+    $handle = [FreedxmNativeFrontFixV2]::GetConsoleWindow()
 
     if ($handle -ne [IntPtr]::Zero) {
-        [FreedxmNativeFormsFixV1]::ShowWindow($handle, 5) | Out-Null
+        [FreedxmNativeFrontFixV2]::ShowWindow($handle, 5) | Out-Null
     }
 }
 
 function Hide-ConsoleWindow {
-    $handle = [FreedxmNativeFormsFixV1]::GetConsoleWindow()
+    $handle = [FreedxmNativeFrontFixV2]::GetConsoleWindow()
 
     if ($handle -ne [IntPtr]::Zero) {
-        [FreedxmNativeFormsFixV1]::ShowWindow($handle, 0) | Out-Null
+        [FreedxmNativeFrontFixV2]::ShowWindow($handle, 0) | Out-Null
     }
 }
 
@@ -78,7 +101,7 @@ function Initialize-Loader {
 
     Write-Host ""
     Write-Host "  FREEDXM LAUNCHER" -ForegroundColor Cyan
-    Write-Host "  FormsFix Login Working Loader" -ForegroundColor DarkGray
+    Write-Host "  FrontFix ReadyX Style Loader" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "  Status : Preparing..." -ForegroundColor Gray
     Write-Host ""
@@ -86,7 +109,7 @@ function Initialize-Loader {
     Write-Host ""
     Write-Host "  Frame  : 0000" -ForegroundColor DarkGray
     Write-Host ""
-    Write-Host "  GODPROJEXTH credit will type, then LOGIN GUI will open." -ForegroundColor DarkGray
+    Write-Host "  GODPROJEXTH credit will type, then LOGIN GUI will force front." -ForegroundColor DarkGray
 }
 
 function Safe-WriteLine {
@@ -348,12 +371,10 @@ function Show-LoginGui {
     [System.Windows.Forms.Application]::EnableVisualStyles()
 
     try {
-        [FreedxmNativeFormsFixV1]::SetProcessDPIAware() | Out-Null
+        [FreedxmNativeFrontFixV2]::SetProcessDPIAware() | Out-Null
     }
     catch {
     }
-
-    Hide-ConsoleWindow
 
     $script:LoginSelectedMode = "NORMAL"
     $script:LoginValidKeys = @("freedxm", "NEVER-2026", "WXYU-KEY")
@@ -393,7 +414,7 @@ function Show-LoginGui {
 
         $r = [Math]::Max(2, (U $Radius))
 
-        $regionPointer = [FreedxmNativeFormsFixV1]::CreateRoundRectRgn(
+        $regionPointer = [FreedxmNativeFrontFixV2]::CreateRoundRectRgn(
             0,
             0,
             $Control.Width + 1,
@@ -413,10 +434,51 @@ function Show-LoginGui {
 
         $Control.Add_MouseDown({
             if ($_.Button -eq [System.Windows.Forms.MouseButtons]::Left) {
-                [FreedxmNativeFormsFixV1]::ReleaseCapture() | Out-Null
-                [FreedxmNativeFormsFixV1]::SendMessage($Form.Handle, 0xA1, 0x2, 0) | Out-Null
+                [FreedxmNativeFrontFixV2]::ReleaseCapture() | Out-Null
+                [FreedxmNativeFrontFixV2]::SendMessage($Form.Handle, 0xA1, 0x2, 0) | Out-Null
             }
         })
+    }
+
+    function Force-Front {
+        param(
+            [System.Windows.Forms.Form]$Form
+        )
+
+        try {
+            if ($Form -eq $null) {
+                return
+            }
+
+            if ($Form.IsDisposed) {
+                return
+            }
+
+            $Form.TopMost = $true
+            $Form.WindowState = [System.Windows.Forms.FormWindowState]::Normal
+            $Form.Show()
+            $Form.Activate()
+            $Form.Focus()
+            $Form.BringToFront()
+
+            [FreedxmNativeFrontFixV2]::ShowWindow($Form.Handle, 9) | Out-Null
+            [FreedxmNativeFrontFixV2]::BringWindowToTop($Form.Handle) | Out-Null
+            [FreedxmNativeFrontFixV2]::SetActiveWindow($Form.Handle) | Out-Null
+            [FreedxmNativeFrontFixV2]::SetForegroundWindow($Form.Handle) | Out-Null
+
+            $flags = 0x0040 -bor 0x0001 -bor 0x0002
+            [FreedxmNativeFrontFixV2]::SetWindowPos(
+                $Form.Handle,
+                [IntPtr]::Zero,
+                0,
+                0,
+                0,
+                0,
+                [uint32]$flags
+            ) | Out-Null
+        }
+        catch {
+        }
     }
 
     function New-UiLabel {
@@ -888,6 +950,22 @@ function Show-LoginGui {
         }
     })
 
+    $frontTimer = New-Object System.Windows.Forms.Timer
+    $frontTimer.Interval = 150
+    $script:FrontTickCount = 0
+
+    $frontTimer.Add_Tick({
+        $script:FrontTickCount++
+
+        if ($script:FrontTickCount -le 45) {
+            Force-Front -Form $form
+        }
+        else {
+            $frontTimer.Stop()
+            $form.TopMost = $true
+        }
+    })
+
     $fadeTimer = New-Object System.Windows.Forms.Timer
     $fadeTimer.Interval = 16
 
@@ -897,17 +975,21 @@ function Show-LoginGui {
         }
         else {
             $fadeTimer.Stop()
-            $form.TopMost = $false
-            $form.Activate()
             $keyBox.Focus()
+            Force-Front -Form $form
         }
     })
 
     $form.Add_Shown({
         $loginPanel.BringToFront()
-        $form.Activate()
-        $form.BringToFront()
+        Hide-ConsoleWindow
+        Force-Front -Form $form
+        $frontTimer.Start()
         $fadeTimer.Start()
+    })
+
+    $form.Add_Activated({
+        Force-Front -Form $form
     })
 
     [System.Windows.Forms.Application]::Run($form)
