@@ -3,7 +3,7 @@ $ProgressPreference = "SilentlyContinue"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "Godprojexth_KEEPALIVE_GUI_ASSET.zip"
+$AssetName = "Godprojexth_NOMIN_ROUNDED_ASSET.zip"
 $Sha256 = "CE3DB94A883083438A5F7345879353CE0C736204DF09D0AC39D0FF36E2B38A67"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthLauncher"
@@ -679,7 +679,7 @@ public static class GodprojexthDetachedGuiNativeV10
             [int]$H,
             [string]$Back = "#5FA0FF",
             [string]$Fore = "#07111F",
-            [int]$Radius = 24
+            [int]$Radius = 30
         )
 
         $button = New-Object System.Windows.Forms.Button
@@ -757,18 +757,12 @@ public static class GodprojexthDetachedGuiNativeV10
     $header.Controls.Add($brand)
     Enable-Drag -Control $brand -Form $form
 
-    $minButton = New-UiButton "-" 272 11 30 30 "#111827" "#94A3B8" 10
-    $closeButton = New-UiButton "x" 306 11 30 30 "#111827" "#94A3B8" 10
-    $themeButton = New-UiButton "moon" 340 7 32 40 "#5FA0FF" "#07111F" 12
+    $closeButton = New-UiButton "x" 306 11 30 30 "#111827" "#94A3B8" 12
+    $themeButton = New-UiButton "moon" 340 7 32 40 "#5FA0FF" "#07111F" 14
     $themeButton.Font = New-Font -Size 7.5 -Style ([System.Drawing.FontStyle]::Bold)
 
-    $header.Controls.Add($minButton)
     $header.Controls.Add($closeButton)
     $header.Controls.Add($themeButton)
-
-    $minButton.Add_Click({
-        $form.WindowState = [System.Windows.Forms.FormWindowState]::Minimized
-    })
 
     $closeButton.Add_Click({
         $form.Close()
@@ -833,13 +827,13 @@ public static class GodprojexthDetachedGuiNativeV10
     $loginPanel.Controls.Add($sub)
     Enable-Drag -Control $sub -Form $form
 
-    $keyPanel = New-UiPanel 10 254 358 48 "#0B1220" 24
+    $keyPanel = New-UiPanel 10 254 358 50 "#0B1220" 30
     $loginPanel.Controls.Add($keyPanel)
 
     $keyPanel.Controls.Add((New-UiLabel "key" 16 13 34 22 8 "#64748B"))
 
     $keyBox = New-Object System.Windows.Forms.TextBox
-    $keyBox.Location = New-Object System.Drawing.Point((U 56), (U 14))
+    $keyBox.Location = New-Object System.Drawing.Point((U 56), (U 15))
     $keyBox.Size = New-Object System.Drawing.Size((U 282), (U 22))
     $keyBox.Font = New-Font -Size 11
     $keyBox.BorderStyle = [System.Windows.Forms.BorderStyle]::None
@@ -890,7 +884,7 @@ public static class GodprojexthDetachedGuiNativeV10
     $loginPanel.Controls.Add($forgot)
     $loginPanel.Controls.Add($support)
 
-    $signIn = New-UiButton "SING IN" 10 372 358 44 "#5FA0FF" "#07111F" 24
+    $signIn = New-UiButton "SING IN" 10 372 358 46 "#5FA0FF" "#07111F" 30
     $loginPanel.Controls.Add($signIn)
 
     $dot = New-UiLabel "." 184 454 14 14 6 "#334155"
