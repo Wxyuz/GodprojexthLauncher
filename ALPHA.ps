@@ -1,127 +1,43 @@
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-$RunUrl = "https://raw.githubusercontent.com/Wxyuz/GodprojexthLauncher/main/ALPHA.ps"
-
-if ($env:GODPROJEXTH_ALPHA_STA_RELAUNCHED -ne "1") {
-    try {
-        $apartment = [System.Threading.Thread]::CurrentThread.GetApartmentState()
-
-        if ($apartment -ne [System.Threading.ApartmentState]::STA) {
-            $env:GODPROJEXTH_ALPHA_STA_RELAUNCHED = "1"
-
-            $relay = "iex (iwr -UseBasicParsing '$RunUrl')"
-            $encodedRelay = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($relay))
-
-            $powerShellExe = Join-Path $PSHOME "powershell.exe"
-
-            if (-not (Test-Path -LiteralPath $powerShellExe)) {
-                $powerShellExe = "powershell.exe"
-            }
-
-            Start-Process -FilePath $powerShellExe -ArgumentList @(
-                "-NoProfile",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-STA",
-                "-EncodedCommand",
-                $encodedRelay
-            ) -WindowStyle Normal | Out-Null
-
-            return
-        }
-    }
-    catch {
-    }
-}
-
-$BrandName = "GODPROJEXTH"
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "Godprojexth_STABLEDRAG_HIDEPS_ASSET.zip"
-$Sha256 = "955A86ABD0D78368F0551DAB702BF44E740686EE600E099CA22F258DDAC33819"
+$AssetName = "Godprojexth_ALPHA_ONLY_DETACHED_ASSET.zip"
+$Sha256 = "0D90D799DFE30901245957A17306495236C933894484E79924EE8158192B968A"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthLauncher"
-$TempRoot = Join-Path $env:TEMP "GodprojexthInstall"
-$TempZip = Join-Path $TempRoot "GodprojexthAlpha.zip"
+$TempRoot = Join-Path $env:TEMP "GodprojexthAlphaInstall"
+$TempZip = Join-Path $TempRoot "GodprojexthAlphaAsset.zip"
+$GuiPath = Join-Path $InstallDir "GODPROJEXTH_ALPHA_GUI.ps1"
 
-if (-not ("GodprojexthAlphaNative" -as [type])) {
+if (-not ("GodprojexthAlphaLoaderNativeV11" -as [type])) {
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
 
-public static class GodprojexthAlphaNative
+public static class GodprojexthAlphaLoaderNativeV11
 {
     [DllImport("kernel32.dll")]
     public static extern IntPtr GetConsoleWindow();
 
     [DllImport("user32.dll")]
     public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-    [DllImport("user32.dll")]
-    public static extern bool ReleaseCapture();
-
-    [DllImport("user32.dll")]
-    public static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
-
-    [DllImport("gdi32.dll")]
-    public static extern IntPtr CreateRoundRectRgn(
-        int nLeftRect,
-        int nTopRect,
-        int nRightRect,
-        int nBottomRect,
-        int nWidthEllipse,
-        int nHeightEllipse
-    );
-
-    [DllImport("user32.dll")]
-    public static extern bool SetProcessDPIAware();
-
-    [DllImport("user32.dll")]
-    public static extern bool SetForegroundWindow(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    public static extern bool BringWindowToTop(IntPtr hWnd);
 }
 "@
 }
 
 function Show-ConsoleWindow {
     try {
-        $handle = [GodprojexthAlphaNative]::GetConsoleWindow()
+        $handle = [GodprojexthAlphaLoaderNativeV11]::GetConsoleWindow()
 
         if ($handle -ne [IntPtr]::Zero) {
-            [GodprojexthAlphaNative]::ShowWindow($handle, 5) | Out-Null
+            [GodprojexthAlphaLoaderNativeV11]::ShowWindow($handle, 5) | Out-Null
         }
     }
     catch {
     }
 }
-
-function Minimize-ConsoleWindow {
-    try {
-        $handle = [GodprojexthAlphaNative]::GetConsoleWindow()
-
-        if ($handle -ne [IntPtr]::Zero) {
-            [GodprojexthAlphaNative]::ShowWindow($handle, 6) | Out-Null
-        }
-    }
-    catch {
-    }
-}
-
-function Hide-ConsoleWindow {
-    try {
-        $handle = [GodprojexthAlphaNative]::GetConsoleWindow()
-
-        if ($handle -ne [IntPtr]::Zero) {
-            [GodprojexthAlphaNative]::ShowWindow($handle, 0) | Out-Null
-        }
-    }
-    catch {
-    }
-}
-
 
 function Initialize-Loader {
     try {
@@ -140,7 +56,7 @@ function Initialize-Loader {
 
     Write-Host ""
     Write-Host "  GODPROJEXTH ALPHA" -ForegroundColor Yellow
-    Write-Host "  Gold Visible Login Loader" -ForegroundColor DarkYellow
+    Write-Host "  Detached GUI Loader" -ForegroundColor DarkYellow
     Write-Host ""
     Write-Host "  Status : Preparing..." -ForegroundColor Yellow
     Write-Host ""
@@ -148,7 +64,7 @@ function Initialize-Loader {
     Write-Host ""
     Write-Host "  Frame  : 0000" -ForegroundColor DarkYellow
     Write-Host ""
-    Write-Host "  Loading data, then opening GODPROJEXTH Login GUI." -ForegroundColor DarkYellow
+    Write-Host "  After loading, PowerShell will close and GUI will keep running." -ForegroundColor DarkYellow
 }
 
 function Safe-WriteLine {
@@ -398,7 +314,7 @@ function Show-GoldGodCredit {
         Start-Sleep -Milliseconds 24
     }
 
-    for ($shine = 0; $shine -lt 40; $shine++) {
+    for ($shine = 0; $shine -lt 35; $shine++) {
         for ($row = 0; $row -lt $art.Count; $row++) {
             $phase = ($shine + $row) % 5
 
@@ -421,13 +337,20 @@ function Show-GoldGodCredit {
             Safe-WriteLine -Top (4 + $row) -Text ("  " + $art[$row]) -Color $color
         }
 
-        Safe-WriteLine -Top 11 -Text ("  Opening GODPROJEXTH Login GUI... frame {0:0000}" -f $FrameRef.Value) -Color DarkYellow
+        Safe-WriteLine -Top 11 -Text ("  Opening detached GUI... frame {0:0000}" -f $FrameRef.Value) -Color DarkYellow
         $FrameRef.Value++
         Start-Sleep -Milliseconds 16
     }
 }
 
-function Show-LoginGui {
+function Write-DetachedGuiFile {
+    param([string]$Path)
+
+    $guiSource = @'
+$ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
+
+try {
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -AssemblyName System.Drawing
 
@@ -435,7 +358,8 @@ function Show-LoginGui {
 
     try {
         [System.Windows.Forms.Application]::SetUnhandledExceptionMode([System.Windows.Forms.UnhandledExceptionMode]::CatchException)
-        $script:GodprojexthUiErrorLog = Join-Path $env:TEMP "GODPROJEXTH_UI_ERROR.log"
+        $script:GodprojexthUiErrorLog = Join-Path $env:TEMP "GODPROJEXTH_ALPHA_UI_ERROR.log"
+
         [System.Windows.Forms.Application]::add_ThreadException({
             param($sender, $eventArgs)
 
@@ -450,15 +374,62 @@ function Show-LoginGui {
     catch {
     }
 
+    if (-not ("GodprojexthDetachedGuiNativeV10" -as [type])) {
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+
+public static class GodprojexthDetachedGuiNativeV10
+{
+    [DllImport("kernel32.dll")]
+    public static extern IntPtr GetConsoleWindow();
+
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("gdi32.dll")]
+    public static extern IntPtr CreateRoundRectRgn(
+        int nLeftRect,
+        int nTopRect,
+        int nRightRect,
+        int nBottomRect,
+        int nWidthEllipse,
+        int nHeightEllipse
+    );
+
+    [DllImport("user32.dll")]
+    public static extern bool SetProcessDPIAware();
+
+    [DllImport("user32.dll")]
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool BringWindowToTop(IntPtr hWnd);
+}
+"@
+    }
 
     try {
-        [GodprojexthAlphaNative]::SetProcessDPIAware() | Out-Null
+        [GodprojexthDetachedGuiNativeV10]::SetProcessDPIAware() | Out-Null
     }
     catch {
     }
 
+    function Hide-GuiConsole {
+        try {
+            $handle = [GodprojexthDetachedGuiNativeV10]::GetConsoleWindow()
+
+            if ($handle -ne [IntPtr]::Zero) {
+                [GodprojexthDetachedGuiNativeV10]::ShowWindow($handle, 0) | Out-Null
+            }
+        }
+        catch {
+        }
+    }
+
     function New-C {
         param([string]$Hex)
+
         return [System.Drawing.ColorTranslator]::FromHtml($Hex)
     }
 
@@ -473,6 +444,7 @@ function Show-LoginGui {
 
     function U {
         param([double]$Value)
+
         return [int][Math]::Round($Value * $script:Scale)
     }
 
@@ -491,25 +463,29 @@ function Show-LoginGui {
             [int]$Radius
         )
 
-        if ($null -eq $Control) {
-            return
+        try {
+            if ($null -eq $Control) {
+                return
+            }
+
+            if ($Control.Width -le 0 -or $Control.Height -le 0) {
+                return
+            }
+
+            $round = [Math]::Max(2, (U $Radius))
+            $regionPointer = [GodprojexthDetachedGuiNativeV10]::CreateRoundRectRgn(
+                0,
+                0,
+                $Control.Width + 1,
+                $Control.Height + 1,
+                $round,
+                $round
+            )
+
+            $Control.Region = [System.Drawing.Region]::FromHrgn($regionPointer)
         }
-
-        if ($Control.Width -le 0 -or $Control.Height -le 0) {
-            return
+        catch {
         }
-
-        $round = [Math]::Max(2, (U $Radius))
-        $regionPointer = [GodprojexthAlphaNative]::CreateRoundRectRgn(
-            0,
-            0,
-            $Control.Width + 1,
-            $Control.Height + 1,
-            $round,
-            $round
-        )
-
-        $Control.Region = [System.Drawing.Region]::FromHrgn($regionPointer)
     }
 
     function Enable-Drag {
@@ -601,13 +577,22 @@ function Show-LoginGui {
         param([System.Windows.Forms.Form]$Form)
 
         try {
+            if ($null -eq $Form) {
+                return
+            }
+
+            if ($Form.IsDisposed) {
+                return
+            }
+
             $Form.WindowState = [System.Windows.Forms.FormWindowState]::Normal
             $Form.Show()
             $Form.Activate()
             $Form.Focus()
             $Form.BringToFront()
-            [GodprojexthAlphaNative]::BringWindowToTop($Form.Handle) | Out-Null
-            [GodprojexthAlphaNative]::SetForegroundWindow($Form.Handle) | Out-Null
+
+            [GodprojexthDetachedGuiNativeV10]::BringWindowToTop($Form.Handle) | Out-Null
+            [GodprojexthDetachedGuiNativeV10]::SetForegroundWindow($Form.Handle) | Out-Null
         }
         catch {
         }
@@ -681,21 +666,26 @@ function Show-LoginGui {
             [int]$H,
             [string]$Back = "#5FA0FF",
             [string]$Fore = "#07111F",
-            [int]$Radius = 16
+            [int]$Radius = 24
         )
 
         $button = New-Object System.Windows.Forms.Button
         $button.Text = $Text
         $button.Location = New-Object System.Drawing.Point((U $X), (U $Y))
         $button.Size = New-Object System.Drawing.Size((U $W), (U $H))
-        $button.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
-        $button.FlatAppearance.BorderSize = 0
         $button.BackColor = New-C $Back
         $button.ForeColor = New-C $Fore
         $button.Font = New-Font -Size 10 -Style ([System.Drawing.FontStyle]::Bold)
         $button.Cursor = [System.Windows.Forms.Cursors]::Hand
         $button.TabStop = $true
         $button.UseVisualStyleBackColor = $false
+
+        try {
+            $button.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+            $button.FlatAppearance.BorderSize = 0
+        }
+        catch {
+        }
 
         $button.Add_HandleCreated({
             Set-Round -Control $button -Radius $Radius
@@ -704,7 +694,6 @@ function Show-LoginGui {
         $button.Add_SizeChanged({
             Set-Round -Control $button -Radius $Radius
         })
-
 
         return $button
     }
@@ -805,7 +794,7 @@ function Show-LoginGui {
     $heroMode = New-UiLabel "Mode" 22 72 125 32 23 "#667085"
     $heroHyper = New-UiLabel "Hyper" 22 100 160 36 29 "#8190A5"
     $heroBottle = New-UiLabel "BOTTLE" 22 130 100 18 9 "#FFFFFF" $true
-    $heroDescription = New-UiLabel "Stable rounded login window,`ndrag anywhere and clean layout." 22 143 300 28 7 "#A3B1C6"
+    $heroDescription = New-UiLabel "Stable detached login window,`nmove safely and keep running." 22 143 300 28 7 "#A3B1C6"
 
     $heroInner.Controls.Add($heroBrand)
     $heroInner.Controls.Add($heroSmall)
@@ -847,18 +836,26 @@ function Show-LoginGui {
     $keyPanel.Controls.Add($keyBox)
 
     $keyBox.Add_GotFocus({
-        if ($keyBox.Text -eq "Key") {
-            $keyBox.Text = ""
-            $keyBox.ForeColor = [System.Drawing.Color]::White
-            $keyBox.UseSystemPasswordChar = $true
+        try {
+            if ($keyBox.Text -eq "Key") {
+                $keyBox.Text = ""
+                $keyBox.ForeColor = [System.Drawing.Color]::White
+                $keyBox.UseSystemPasswordChar = $true
+            }
+        }
+        catch {
         }
     })
 
     $keyBox.Add_LostFocus({
-        if ([string]::IsNullOrWhiteSpace($keyBox.Text)) {
-            $keyBox.UseSystemPasswordChar = $false
-            $keyBox.Text = "Key"
-            $keyBox.ForeColor = New-C "#64748B"
+        try {
+            if ([string]::IsNullOrWhiteSpace($keyBox.Text)) {
+                $keyBox.UseSystemPasswordChar = $false
+                $keyBox.Text = "Key"
+                $keyBox.ForeColor = New-C "#64748B"
+            }
+        }
+        catch {
         }
     })
 
@@ -870,7 +867,11 @@ function Show-LoginGui {
     $support = New-UiLabel "Support" 298 333 62 18 9 "#60A5FA" $true
     $support.Cursor = [System.Windows.Forms.Cursors]::Hand
     $support.Add_Click({
-        Start-Process "https://github.com/Wxyuz/GodprojexthLauncher"
+        try {
+            Start-Process "https://github.com/Wxyuz/GodprojexthLauncher"
+        }
+        catch {
+        }
     })
 
     $loginPanel.Controls.Add($forgot)
@@ -911,30 +912,34 @@ function Show-LoginGui {
     function SetMode {
         param([string]$modeName)
 
-        $script:selectedMode = $modeName
-        $modeSelected.Text = "Selected: $modeName"
+        try {
+            $script:selectedMode = $modeName
+            $modeSelected.Text = "Selected: $modeName"
 
-        $modeLeft.BackColor = New-C "#0B1220"
-        $modeCenter.BackColor = New-C "#0B1220"
-        $modeRight.BackColor = New-C "#0B1220"
+            $modeLeft.BackColor = New-C "#0B1220"
+            $modeCenter.BackColor = New-C "#0B1220"
+            $modeRight.BackColor = New-C "#0B1220"
 
-        $modeLeft.ForeColor = New-C "#CBD5E1"
-        $modeCenter.ForeColor = New-C "#CBD5E1"
-        $modeRight.ForeColor = New-C "#64748B"
+            $modeLeft.ForeColor = New-C "#CBD5E1"
+            $modeCenter.ForeColor = New-C "#CBD5E1"
+            $modeRight.ForeColor = New-C "#64748B"
 
-        if ($modeName -eq "BOTTLE") {
-            $modeLeft.BackColor = New-C "#1E293B"
-            $modeLeft.ForeColor = [System.Drawing.Color]::White
+            if ($modeName -eq "BOTTLE") {
+                $modeLeft.BackColor = New-C "#1E293B"
+                $modeLeft.ForeColor = [System.Drawing.Color]::White
+            }
+
+            if ($modeName -eq "NORMAL") {
+                $modeCenter.BackColor = New-C "#1E293B"
+                $modeCenter.ForeColor = [System.Drawing.Color]::White
+            }
+
+            if ($modeName -eq "HYPER") {
+                $modeRight.BackColor = New-C "#1E293B"
+                $modeRight.ForeColor = [System.Drawing.Color]::White
+            }
         }
-
-        if ($modeName -eq "NORMAL") {
-            $modeCenter.BackColor = New-C "#1E293B"
-            $modeCenter.ForeColor = [System.Drawing.Color]::White
-        }
-
-        if ($modeName -eq "HYPER") {
-            $modeRight.BackColor = New-C "#1E293B"
-            $modeRight.ForeColor = [System.Drawing.Color]::White
+        catch {
         }
     }
 
@@ -982,12 +987,17 @@ function Show-LoginGui {
     $timer.Interval = 420
 
     $timer.Add_Tick({
-        if ($script:index -lt $script:lines.Count) {
-            $activityBox.AppendText($script:lines[$script:index] + [Environment]::NewLine)
-            $script:index++
-            $progress.Value = [Math]::Min(100, [int](($script:index / $script:lines.Count) * 100))
+        try {
+            if ($script:index -lt $script:lines.Count) {
+                $activityBox.AppendText($script:lines[$script:index] + [Environment]::NewLine)
+                $script:index++
+                $progress.Value = [Math]::Min(100, [int](($script:index / $script:lines.Count) * 100))
+            }
+            else {
+                $timer.Stop()
+            }
         }
-        else {
+        catch {
             $timer.Stop()
         }
     })
@@ -995,39 +1005,52 @@ function Show-LoginGui {
     function StartActivity {
         param([string[]]$linesToRun)
 
-        $activity.Visible = $true
-        $activity.BringToFront()
-        $activityBox.Clear()
-        $progress.Value = 0
-        $script:lines = $linesToRun
-        $script:index = 0
-        $timer.Start()
+        try {
+            $activity.Visible = $true
+            $activity.BringToFront()
+            $activityBox.Clear()
+            $progress.Value = 0
+            $script:lines = $linesToRun
+            $script:index = 0
+            $timer.Start()
+        }
+        catch {
+        }
     }
 
     $signIn.Add_Click({
-        $entered = $keyBox.Text.Trim()
+        try {
+            $entered = $keyBox.Text.Trim()
 
-        if ($entered -eq "" -or $entered -eq "Key") {
-            $status.Text = "Please enter your key to continue."
-            return
+            if ($entered -eq "" -or $entered -eq "Key") {
+                $status.Text = "Please enter your key to continue."
+                return
+            }
+
+            $valid = @("GODPROJEXTH", "ALPHA", "WXYU-KEY", "NEVER-2026")
+
+            if ($valid -contains $entered) {
+                $status.Text = ""
+                $modePanel.Visible = $true
+                $modePanel.BringToFront()
+                $loginPanel.Visible = $false
+            }
+            else {
+                $status.Text = "Invalid key."
+            }
         }
-
-        $valid = @("GODPROJEXTH", "ALPHA", "WXYU-KEY", "NEVER-2026")
-
-        if ($valid -contains $entered) {
-            $status.Text = ""
-            $modePanel.Visible = $true
-            $modePanel.BringToFront()
-            $loginPanel.Visible = $false
-        }
-        else {
-            $status.Text = "Invalid key."
+        catch {
+            $status.Text = "Login error."
         }
     })
 
     $keyBox.Add_KeyDown({
-        if ($_.KeyCode -eq [System.Windows.Forms.Keys]::Enter) {
-            $signIn.PerformClick()
+        try {
+            if ($_.KeyCode -eq [System.Windows.Forms.Keys]::Enter) {
+                $signIn.PerformClick()
+            }
+        }
+        catch {
         }
     })
 
@@ -1053,23 +1076,35 @@ function Show-LoginGui {
     })
 
     $websiteButton.Add_Click({
-        Start-Process "https://github.com/Wxyuz/GodprojexthLauncher"
+        try {
+            Start-Process "https://github.com/Wxyuz/GodprojexthLauncher"
+        }
+        catch {
+        }
     })
 
     $themeButton.Add_Click({
-        if ($themeButton.Text -eq "moon") {
-            $themeButton.Text = "dark"
-            $themeButton.BackColor = New-C "#93C5FD"
+        try {
+            if ($themeButton.Text -eq "moon") {
+                $themeButton.Text = "dark"
+                $themeButton.BackColor = New-C "#93C5FD"
+            }
+            else {
+                $themeButton.Text = "moon"
+                $themeButton.BackColor = New-C "#5FA0FF"
+            }
         }
-        else {
-            $themeButton.Text = "moon"
-            $themeButton.BackColor = New-C "#5FA0FF"
+        catch {
         }
     })
 
     $form.Add_KeyDown({
-        if ($_.KeyCode -eq [System.Windows.Forms.Keys]::Escape) {
-            $form.Close()
+        try {
+            if ($_.KeyCode -eq [System.Windows.Forms.Keys]::Escape) {
+                $form.Close()
+            }
+        }
+        catch {
         }
     })
 
@@ -1078,32 +1113,96 @@ function Show-LoginGui {
     $script:frontTick = 0
 
     $frontTimer.Add_Tick({
-        $script:frontTick++
+        try {
+            $script:frontTick++
 
-        if ($script:frontTick -le 10) {
-            Bring-LoginFront $form
+            if ($script:frontTick -le 10) {
+                Bring-LoginFront $form
+            }
+            else {
+                $frontTimer.Stop()
+                $form.TopMost = $false
+            }
         }
-        else {
+        catch {
             $frontTimer.Stop()
             $form.TopMost = $false
         }
     })
 
     $form.Add_Shown({
-        $loginPanel.BringToFront()
-        Hide-ConsoleWindow
-        Bring-LoginFront $form
-        $frontTimer.Start()
-        $keyBox.Focus()
+        try {
+            $loginPanel.BringToFront()
+            Hide-GuiConsole
+            Bring-LoginFront $form
+            $frontTimer.Start()
+            $keyBox.Focus()
+        }
+        catch {
+        }
     })
 
+    [System.Windows.Forms.Application]::Run($form)
+}
+catch {
     try {
-        [Console]::CursorVisible = $true
+        $errorFile = Join-Path $env:TEMP "GODPROJEXTH_ALPHA_GUI_FATAL_ERROR.log"
+        Add-Content -Path $errorFile -Value $_.Exception.Message -Encoding UTF8
+
+        Add-Type -AssemblyName System.Windows.Forms
+        [System.Windows.Forms.MessageBox]::Show(
+            $_.Exception.Message,
+            "GODPROJEXTH GUI ERROR",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Error
+        ) | Out-Null
     }
     catch {
     }
+}
 
-    [System.Windows.Forms.Application]::Run($form)
+'@
+
+    $folder = Split-Path -Parent $Path
+
+    if (-not (Test-Path -LiteralPath $folder)) {
+        New-Item -ItemType Directory -Path $folder -Force | Out-Null
+    }
+
+    Set-Content -LiteralPath $Path -Value $guiSource -Encoding UTF8 -Force
+}
+
+function Start-DetachedGui {
+    param([string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        throw "GUI file not found: $Path"
+    }
+
+    $powerShellExe = Join-Path $PSHOME "powershell.exe"
+
+    if (-not (Test-Path -LiteralPath $powerShellExe)) {
+        $powerShellExe = "powershell.exe"
+    }
+
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-STA",
+        "-WindowStyle",
+        "Hidden",
+        "-File",
+        "`"$Path`""
+    )
+
+    $process = Start-Process -FilePath $powerShellExe -ArgumentList $args -WindowStyle Hidden -PassThru
+
+    if (-not $process) {
+        throw "Cannot start detached GODPROJEXTH GUI."
+    }
+
+    return $process
 }
 
 try {
@@ -1161,11 +1260,25 @@ try {
 
     Expand-Archive -Path $TempZip -DestinationPath $InstallDir -Force
 
+    $progress = Animate-ToPercent -From $progress -To 94 -Status "Preparing detached GUI..." -FrameRef ([ref]$frame)
+
+    Write-DetachedGuiFile -Path $GuiPath
+
     $progress = Animate-ToPercent -From $progress -To 100 -Status "Completed. Showing credit..." -FrameRef ([ref]$frame)
 
     Show-GoldGodCredit -FrameRef ([ref]$frame)
 
-    Show-LoginGui
+    Start-DetachedGui -Path $GuiPath | Out-Null
+
+    Start-Sleep -Milliseconds 900
+
+    try {
+        [Console]::CursorVisible = $true
+    }
+    catch {
+    }
+
+    [Environment]::Exit(0)
 }
 catch {
     try {
