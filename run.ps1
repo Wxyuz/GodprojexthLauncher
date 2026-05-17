@@ -1,33 +1,54 @@
-# FreedxmLauncher one-link installer
-# แก้แค่บรรทัด ZipUrl ให้เป็น direct link ของ FreedxmLauncher.zip ของคุณ
-# แล้วอัปโหลดไฟล์นี้เป็น run.ps1
-
 $ErrorActionPreference = "Stop"
 
-$ZipUrl = "https://github.com/Wxyuz/GodprojexthLauncher/releases/download/v1.0.0/FreedxmLauncher.1.zip"
+$Owner = "Wxyuz"
+$Repo = "GodprojexthLauncher"
 $Sha256 = "1A9262B9DC9A00EF662325EE14466246354C929F75636F65D85507520811B075"
+
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
 $TempRoot = Join-Path $env:TEMP "FreedxmLauncherInstall"
 $TempZip = Join-Path $TempRoot "FreedxmLauncher.zip"
 
 Write-Host "Freedxm Launcher" -ForegroundColor Cyan
+Write-Host "Finding latest release..." -ForegroundColor Cyan
+
+$Headers = @{
+    "User-Agent" = "FreedxmLauncherInstaller"
+}
+
+$ReleaseApi = "https://api.github.com/repos/$Owner/$Repo/releases/latest"
+$Release = Invoke-RestMethod -Uri $ReleaseApi -Headers $Headers
+
+$Asset = $Release.assets |
+    Where-Object { $_.name -like "*.zip" } |
+    Select-Object -First 1
+
+if (-not $Asset) {
+    throw "No .zip asset found in latest release."
+}
+
+$ZipUrl = $Asset.browser_download_url
+
+Write-Host "Found asset: $($Asset.name)" -ForegroundColor Green
 Write-Host "Downloading..." -ForegroundColor Cyan
 
 Remove-Item $TempRoot -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $TempRoot | Out-Null
 
-Invoke-WebRequest -Uri $ZipUrl -OutFile $TempZip -UseBasicParsing
+Invoke-WebRequest -Uri $ZipUrl -OutFile $TempZip -UseBasicParsing -Headers $Headers
 
 Write-Host "Checking SHA256..." -ForegroundColor Cyan
-$ActualHash = (Get-FileHash $TempZip -Algorithm SHA256).Hash.ToUpperInvariant()
 
-if ($ActualHash -ne $Sha256.ToUpperInvariant()) {
-    Write-Host "Expected: $Sha256" -ForegroundColor Red
+$ActualHash = (Get-FileHash $TempZip -Algorithm SHA256).Hash.ToUpperInvariant()
+$ExpectedHash = $Sha256.ToUpperInvariant()
+
+if ($ActualHash -ne $ExpectedHash) {
+    Write-Host "Expected: $ExpectedHash" -ForegroundColor Red
     Write-Host "Actual:   $ActualHash" -ForegroundColor Red
     throw "SHA256 mismatch. ZIP file changed or corrupted."
 }
 
 Write-Host "Installing..." -ForegroundColor Cyan
+
 Remove-Item $InstallDir -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $InstallDir | Out-Null
 
