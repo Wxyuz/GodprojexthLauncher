@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$PreferredAssetName = "FreedxmLauncher_GithubReady_Full.zip"
+$PreferredAssetName = "FreedxmLauncher_NoDotnet.zip"
 $Sha256 = "0CD8F91B9B104DCB4B2F43443F17E302C6984CCB7F65DDCC0B0BA79F45B09DC6"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
