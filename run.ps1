@@ -4,7 +4,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$ZipUrl = "https://github.com/Wxyuz/GodprojexthLauncher/releases/latest/download/FreedxmLauncher1.zip"
+$ZipUrl = "https://github.com/Wxyuz/GodprojexthLauncher/releases/download/v1.0.0/FreedxmLauncher1.zip"
 $Sha256 = "1A9262B9DC9A00EF662325EE14466246354C929F75636F65D85507520811B075"
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
 $TempRoot = Join-Path $env:TEMP "FreedxmLauncherInstall"
