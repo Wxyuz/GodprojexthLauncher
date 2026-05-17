@@ -3,8 +3,8 @@ $ProgressPreference = "SilentlyContinue"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "Godprojexth_ALPHA_ONLY_DETACHED_ASSET.zip"
-$Sha256 = "0D90D799DFE30901245957A17306495236C933894484E79924EE8158192B968A"
+$AssetName = "Godprojexth_KEEPALIVE_GUI_ASSET.zip"
+$Sha256 = "CE3DB94A883083438A5F7345879353CE0C736204DF09D0AC39D0FF36E2B38A67"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthLauncher"
 $TempRoot = Join-Path $env:TEMP "GodprojexthAlphaInstall"
@@ -349,6 +349,19 @@ function Write-DetachedGuiFile {
     $guiSource = @'
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
+
+
+$script:MarkerPathFromArgs = $null
+try {
+    for ($argumentIndex = 0; $argumentIndex -lt $args.Count; $argumentIndex++) {
+        if (($args[$argumentIndex] -eq "-MarkerPath") -and (($argumentIndex + 1) -lt $args.Count)) {
+            $script:MarkerPathFromArgs = [string]$args[$argumentIndex + 1]
+        }
+    }
+}
+catch {
+    $script:MarkerPathFromArgs = $null
+}
 
 try {
     Add-Type -AssemblyName System.Windows.Forms
@@ -1135,6 +1148,15 @@ public static class GodprojexthDetachedGuiNativeV10
             $loginPanel.BringToFront()
             Hide-GuiConsole
             Bring-LoginFront $form
+
+            try {
+                if (-not [string]::IsNullOrWhiteSpace($script:MarkerPathFromArgs)) {
+                    Set-Content -LiteralPath $script:MarkerPathFromArgs -Value "GODPROJEXTH_GUI_READY" -Encoding UTF8 -Force
+                }
+            }
+            catch {
+            }
+
             $frontTimer.Start()
             $keyBox.Focus()
         }
@@ -1185,7 +1207,10 @@ function Start-DetachedGui {
         $powerShellExe = "powershell.exe"
     }
 
-    $args = @(
+    $markerPath = Join-Path $env:TEMP ("GODPROJEXTH_ALPHA_GUI_READY_" + [Guid]::NewGuid().ToString("N") + ".flag")
+    Remove-Item -LiteralPath $markerPath -Force -ErrorAction SilentlyContinue
+
+    $childArguments = @(
         "-NoProfile",
         "-ExecutionPolicy",
         "Bypass",
@@ -1193,16 +1218,36 @@ function Start-DetachedGui {
         "-WindowStyle",
         "Hidden",
         "-File",
-        "`"$Path`""
-    )
+        "`"$Path`"",
+        "-MarkerPath",
+        "`"$markerPath`""
+    ) -join " "
 
-    $process = Start-Process -FilePath $powerShellExe -ArgumentList $args -WindowStyle Hidden -PassThru
+    $cmdLine = '/d /c start "GODPROJEXTH_ALPHA_GUI" "' + $powerShellExe + '" ' + $childArguments
 
-    if (-not $process) {
-        throw "Cannot start detached GODPROJEXTH GUI."
+    $cmdProcess = Start-Process -FilePath "cmd.exe" -ArgumentList $cmdLine -WindowStyle Hidden -PassThru
+
+    if (-not $cmdProcess) {
+        throw "Cannot create detached GUI process."
     }
 
-    return $process
+    $started = $false
+
+    for ($waitIndex = 0; $waitIndex -lt 80; $waitIndex++) {
+        if (Test-Path -LiteralPath $markerPath) {
+            $started = $true
+            break
+        }
+
+        Start-Sleep -Milliseconds 100
+    }
+
+    if (-not $started) {
+        # Do not kill anything here. The GUI may still be opening on a slow machine.
+        # We only continue and let the detached process stay alive.
+    }
+
+    return $true
 }
 
 try {
@@ -1278,7 +1323,7 @@ try {
     catch {
     }
 
-    [Environment]::Exit(0)
+    exit 0
 }
 catch {
     try {
