@@ -2,7 +2,8 @@ $ErrorActionPreference = "Stop"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$Sha256 = "1A9262B9DC9A00EF662325EE14466246354C929F75636F65D85507520811B075"
+$PreferredAssetName = "FreedxmLauncher_GithubReady_Full.zip"
+$Sha256 = "0CD8F91B9B104DCB4B2F43443F17E302C6984CCB7F65DDCC0B0BA79F45B09DC6"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
 $TempRoot = Join-Path $env:TEMP "FreedxmLauncherInstall"
@@ -19,8 +20,14 @@ $ReleaseApi = "https://api.github.com/repos/$Owner/$Repo/releases/latest"
 $Release = Invoke-RestMethod -Uri $ReleaseApi -Headers $Headers
 
 $Asset = $Release.assets |
-    Where-Object { $_.name -like "*.zip" } |
+    Where-Object { $_.name -eq $PreferredAssetName } |
     Select-Object -First 1
+
+if (-not $Asset) {
+    $Asset = $Release.assets |
+        Where-Object { $_.name -like "*.zip" } |
+        Select-Object -First 1
+}
 
 if (-not $Asset) {
     throw "No .zip asset found in latest release."
@@ -56,6 +63,7 @@ Expand-Archive -Path $TempZip -DestinationPath $InstallDir -Force
 
 $Exe = Get-ChildItem -Path $InstallDir -Filter "FreedxmLauncher.exe" -Recurse -File -ErrorAction SilentlyContinue | Select-Object -First 1
 $Bat = Get-ChildItem -Path $InstallDir -Filter "run.bat" -Recurse -File -ErrorAction SilentlyContinue | Select-Object -First 1
+$Ps1 = Get-ChildItem -Path $InstallDir -Filter "FreedxmLauncher.ps1" -Recurse -File -ErrorAction SilentlyContinue | Select-Object -First 1
 
 if ($Exe) {
     Write-Host "Opening FreedxmLauncher.exe..." -ForegroundColor Green
@@ -65,8 +73,12 @@ elseif ($Bat) {
     Write-Host "Opening run.bat..." -ForegroundColor Green
     Start-Process -FilePath $Bat.FullName -WorkingDirectory $Bat.DirectoryName
 }
+elseif ($Ps1) {
+    Write-Host "Opening FreedxmLauncher.ps1..." -ForegroundColor Green
+    Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$($Ps1.FullName)`""
+}
 else {
-    Write-Host "No EXE or run.bat found. Opening folder..." -ForegroundColor Yellow
+    Write-Host "No EXE, run.bat, or FreedxmLauncher.ps1 found. Opening folder..." -ForegroundColor Yellow
     Start-Process explorer.exe $InstallDir
 }
 
