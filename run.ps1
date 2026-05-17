@@ -3,8 +3,8 @@ $ProgressPreference = "SilentlyContinue"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "FreedxmLauncher_UniversalWin60.zip"
-$Sha256 = "56F89BC3DA1C81A099016D6828A9CD7168A43A1CE6117B24365F38CA1D08C096"
+$AssetName = "FreedxmLauncher_GodprojexthCredit.zip"
+$Sha256 = "D875AC5FC9C45AF40C876C0CEB88D88895A964A68CE8B31E5E5288FE6317C934"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
 $TempRoot = Join-Path $env:TEMP "FreedxmLauncherInstall"
@@ -41,7 +41,7 @@ function Initialize-Loader {
 
     Write-Host ""
     Write-Host "  FREEDXM LAUNCHER" -ForegroundColor Cyan
-    Write-Host "  Universal Windows 60 FPS loader" -ForegroundColor DarkGray
+    Write-Host "  Smooth PowerShell loader" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "  Status : Preparing..." -ForegroundColor Gray
     Write-Host ""
@@ -49,7 +49,7 @@ function Initialize-Loader {
     Write-Host ""
     Write-Host "  Frame  : 0000" -ForegroundColor DarkGray
     Write-Host ""
-    Write-Host "  The login GUI will open automatically." -ForegroundColor DarkGray
+    Write-Host "  Login GUI will open after GODPROJEXTH credit." -ForegroundColor DarkGray
 }
 
 function Safe-WriteLine {
@@ -203,6 +203,53 @@ function Download-FileSmooth {
     }
 }
 
+function Show-GodprojexthCredit {
+    param([ref]$FrameRef)
+
+    $art = @(
+        "  ####   ###  ####  ####  ####   ###   ###  #### #   # ##### #   #",
+        " #      #   # #   # #   # #   # #   #   #   #    #   #   #   #   #",
+        " #  ##  #   # #   # ####  ####  #   #   #   ###   #####   #   #####",
+        " #   #  #   # #   # #     #  #  #   #   #   #      # #    #   #   #",
+        "  ####   ###  ####  #     #   #  ###  ###   ####   # #    #   #   #"
+    )
+
+    Clear-Host
+
+    Write-Host ""
+    Write-Host ""
+    Write-Host "        CREDIT" -ForegroundColor DarkYellow
+    Write-Host ""
+
+    for ($cycle = 0; $cycle -lt 42; $cycle++) {
+        $lineTop = 4
+
+        for ($i = 0; $i -lt $art.Count; $i++) {
+            $colorIndex = ($cycle + $i) % 4
+
+            if ($colorIndex -eq 0) {
+                $color = [System.ConsoleColor]::DarkYellow
+            }
+            elseif ($colorIndex -eq 1) {
+                $color = [System.ConsoleColor]::Yellow
+            }
+            elseif ($colorIndex -eq 2) {
+                $color = [System.ConsoleColor]::White
+            }
+            else {
+                $color = [System.ConsoleColor]::Yellow
+            }
+
+            Safe-WriteLine -Top ($lineTop + $i) -Text $art[$i] -Color $color
+        }
+
+        Safe-WriteLine -Top 11 -Text ("        Pixel gradient credit loading login... frame {0:0000}" -f $FrameRef.Value) -Color DarkGray
+
+        $FrameRef.Value++
+        Start-Sleep -Milliseconds 16
+    }
+}
+
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
@@ -258,29 +305,22 @@ try {
 
     Expand-Archive -Path $TempZip -DestinationPath $InstallDir -Force
 
-    $progress = Animate-ToPercent -From $progress -To 94 -Status "Preparing login window..." -FrameRef ([ref]$frame)
+    $progress = Animate-ToPercent -From $progress -To 100 -Status "Completed. Showing GODPROJEXTH credit..." -FrameRef ([ref]$frame)
+
+    Show-GodprojexthCredit -FrameRef ([ref]$frame)
 
     $GuiScript = Get-ChildItem -Path $InstallDir -Filter "FreedxmLauncher.ps1" -Recurse -File -ErrorAction SilentlyContinue |
-        Select-Object -First 1
-
-    $GuiVbs = Get-ChildItem -Path $InstallDir -Filter "Launch_FreedxmLauncher.vbs" -Recurse -File -ErrorAction SilentlyContinue |
         Select-Object -First 1
 
     if (-not $GuiScript) {
         throw "FreedxmLauncher.ps1 was not found after install."
     }
 
-    if ($GuiVbs) {
-        Start-Process -FilePath "wscript.exe" -ArgumentList "`"$($GuiVbs.FullName)`"" -WindowStyle Hidden
-    }
-    else {
-        $ArgumentList = "-STA -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$($GuiScript.FullName)`""
-        Start-Process -FilePath "powershell.exe" -ArgumentList $ArgumentList -WindowStyle Hidden
-    }
+    $ArgumentList = "-STA -NoProfile -ExecutionPolicy Bypass -File `"$($GuiScript.FullName)`""
 
-    $progress = Animate-ToPercent -From $progress -To 100 -Status "Completed. Opening login..." -FrameRef ([ref]$frame)
+    Start-Process -FilePath "powershell.exe" -ArgumentList $ArgumentList -WindowStyle Normal
 
-    Start-Sleep -Milliseconds 450
+    Start-Sleep -Milliseconds 900
 
     $ConsoleWindow = [FreedxmLoaderWindow]::GetConsoleWindow()
 
