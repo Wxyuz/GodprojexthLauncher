@@ -3,8 +3,8 @@ $ProgressPreference = "SilentlyContinue"
 
 $Owner = "Wxyuz"
 $Repo = "GodprojexthLauncher"
-$AssetName = "FreedxmLauncher_Smooth60.zip"
-$Sha256 = "EBDD1615097CA757DBD95B7E42CB22350A7DEBA63900B71D40347C6AE865E707"
+$AssetName = "FreedxmLauncher_UniversalWin60.zip"
+$Sha256 = "56F89BC3DA1C81A099016D6828A9CD7168A43A1CE6117B24365F38CA1D08C096"
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "FreedxmLauncher"
 $TempRoot = Join-Path $env:TEMP "FreedxmLauncherInstall"
@@ -14,7 +14,7 @@ Add-Type @"
 using System;
 using System.Runtime.InteropServices;
 
-public static class LoaderConsoleWindow
+public static class FreedxmLoaderWindow
 {
     [DllImport("kernel32.dll")]
     public static extern IntPtr GetConsoleWindow();
@@ -24,45 +24,59 @@ public static class LoaderConsoleWindow
 }
 "@
 
-function Initialize-ConsoleLoader {
-    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-    [Console]::CursorVisible = $false
+function Initialize-Loader {
+    try {
+        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    }
+    catch {
+    }
+
+    try {
+        [Console]::CursorVisible = $false
+    }
+    catch {
+    }
 
     Clear-Host
 
     Write-Host ""
     Write-Host "  FREEDXM LAUNCHER" -ForegroundColor Cyan
-    Write-Host "  Smooth 60 FPS PowerShell loader" -ForegroundColor DarkGray
+    Write-Host "  Universal Windows 60 FPS loader" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "  Status : Preparing..." -ForegroundColor Gray
     Write-Host ""
-    Write-Host "  [----------------------------------------] 0%" -ForegroundColor DarkGray
+    Write-Host "  [........................................]   0%" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "  Frame  : 0000" -ForegroundColor DarkGray
     Write-Host ""
-    Write-Host "  Please wait. The login window will open automatically." -ForegroundColor DarkGray
+    Write-Host "  The login GUI will open automatically." -ForegroundColor DarkGray
 }
 
-function Write-CleanLine {
+function Safe-WriteLine {
     param(
         [int]$Top,
         [string]$Text,
         [System.ConsoleColor]$Color = [System.ConsoleColor]::White
     )
 
-    $width = [Console]::WindowWidth
-    if ($width -lt 20) {
-        $width = 120
+    try {
+        $width = [Console]::WindowWidth
+
+        if ($width -lt 40) {
+            $width = 120
+        }
+
+        if ($Text.Length -gt ($width - 1)) {
+            $Text = $Text.Substring(0, $width - 1)
+        }
+
+        $padded = $Text.PadRight($width - 1)
+
+        [Console]::SetCursorPosition(0, $Top)
+        Write-Host $padded -NoNewline -ForegroundColor $Color
     }
-
-    if ($Text.Length -gt ($width - 1)) {
-        $Text = $Text.Substring(0, $width - 1)
+    catch {
     }
-
-    $padded = $Text.PadRight($width - 1)
-
-    [Console]::SetCursorPosition(0, $Top)
-    Write-Host $padded -NoNewline -ForegroundColor $Color
 }
 
 function Draw-Loader {
@@ -86,14 +100,14 @@ function Draw-Loader {
     }
 
     $empty = $barWidth - $filled
-    $bar = ("#" * $filled) + ("-" * $empty)
+    $bar = ("#" * $filled) + ("." * $empty)
 
     $spinnerChars = @("|", "/", "-", "\")
     $spinner = $spinnerChars[$Frame % $spinnerChars.Count]
 
-    Write-CleanLine -Top 4 -Text ("  Status : {0} {1}" -f $Status, $spinner) -Color White
-    Write-CleanLine -Top 6 -Text ("  [{0}] {1,3}%" -f $bar, $Percent) -Color Cyan
-    Write-CleanLine -Top 8 -Text ("  Frame  : {0:0000}" -f $Frame) -Color DarkGray
+    Safe-WriteLine -Top 4 -Text ("  Status : {0} {1}" -f $Status, $spinner) -Color White
+    Safe-WriteLine -Top 6 -Text ("  [{0}] {1,3}%" -f $bar, $Percent) -Color Cyan
+    Safe-WriteLine -Top 8 -Text ("  Frame  : {0:0000}" -f $Frame) -Color DarkGray
 }
 
 function Animate-ToPercent {
@@ -156,6 +170,7 @@ function Download-FileSmooth {
             $totalRead += $read
 
             $now = [Environment]::TickCount
+
             if (($now - $lastDraw) -ge 16) {
                 if ($totalBytes -gt 0) {
                     $downloadPercent = [int](35 + (($totalRead / $totalBytes) * 28))
@@ -191,7 +206,7 @@ function Download-FileSmooth {
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-    Initialize-ConsoleLoader
+    Initialize-Loader
 
     $frame = 0
     $progress = 0
@@ -248,27 +263,44 @@ try {
     $GuiScript = Get-ChildItem -Path $InstallDir -Filter "FreedxmLauncher.ps1" -Recurse -File -ErrorAction SilentlyContinue |
         Select-Object -First 1
 
+    $GuiVbs = Get-ChildItem -Path $InstallDir -Filter "Launch_FreedxmLauncher.vbs" -Recurse -File -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+
     if (-not $GuiScript) {
         throw "FreedxmLauncher.ps1 was not found after install."
     }
 
-    $ArgumentList = "-STA -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$($GuiScript.FullName)`""
-
-    Start-Process -FilePath "powershell.exe" -ArgumentList $ArgumentList -WindowStyle Hidden
+    if ($GuiVbs) {
+        Start-Process -FilePath "wscript.exe" -ArgumentList "`"$($GuiVbs.FullName)`"" -WindowStyle Hidden
+    }
+    else {
+        $ArgumentList = "-STA -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$($GuiScript.FullName)`""
+        Start-Process -FilePath "powershell.exe" -ArgumentList $ArgumentList -WindowStyle Hidden
+    }
 
     $progress = Animate-ToPercent -From $progress -To 100 -Status "Completed. Opening login..." -FrameRef ([ref]$frame)
 
     Start-Sleep -Milliseconds 450
 
-    $ConsoleWindow = [LoaderConsoleWindow]::GetConsoleWindow()
+    $ConsoleWindow = [FreedxmLoaderWindow]::GetConsoleWindow()
+
     if ($ConsoleWindow -ne [IntPtr]::Zero) {
-        [LoaderConsoleWindow]::ShowWindow($ConsoleWindow, 6) | Out-Null
+        [FreedxmLoaderWindow]::ShowWindow($ConsoleWindow, 6) | Out-Null
     }
 
-    [Console]::CursorVisible = $true
+    try {
+        [Console]::CursorVisible = $true
+    }
+    catch {
+    }
 }
 catch {
-    [Console]::CursorVisible = $true
+    try {
+        [Console]::CursorVisible = $true
+    }
+    catch {
+    }
+
     Clear-Host
     Write-Host ""
     Write-Host "  FREEDXM LAUNCHER ERROR" -ForegroundColor Red
