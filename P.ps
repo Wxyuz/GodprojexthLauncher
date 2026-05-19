@@ -3,13 +3,10 @@ $ProgressPreference = "SilentlyContinue"
 
 $AppName = "GODPROJEXTH"
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthLauncher"
-$PyPath = Join-Path $InstallDir "Powershell.py"
+$PayloadPath = Join-Path $InstallDir "Powershell.py"
 
-# ถ้าไฟล์ Powershell.py อยู่ใน GitHub Release Assets ให้ใช้ลิงก์นี้
-$PyUrl = "https://github.com/Wxyuz/GodprojexthLauncher/releases/latest/download/Powershell.py"
-
-# ถ้าคุณย้าย Powershell.py ไปไว้หน้า Code หลัก ค่อยเปลี่ยนเป็นลิงก์นี้แทน
-# $PyUrl = "https://raw.githubusercontent.com/Wxyuz/GodprojexthLauncher/main/Powershell.py"
+# ใช้ไฟล์ Powershell.py จาก GitHub Release Assets
+$PayloadUrl = "https://github.com/Wxyuz/GodprojexthLauncher/releases/latest/download/Powershell.py"
 
 $RequiredModules = @(
     @{ ImportName = "PySide6"; PackageName = "PySide6" },
@@ -21,8 +18,9 @@ $RequiredModules = @(
 function Set-ConsoleLook {
     try {
         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+        [Console]::InputEncoding = [System.Text.Encoding]::UTF8
         [Console]::CursorVisible = $false
-        [Console]::Title = "GODPROJEXTH PYTHON GUI RUNNER"
+        [Console]::Title = "GODPROJEXTH PREMIUM RUNNER"
     }
     catch {
     }
@@ -32,8 +30,7 @@ function Write-TypeText {
     param(
         [string]$Text,
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-        [int]$Delay = 12,
-        [switch]$NoNewLine
+        [int]$Delay = 12
     )
 
     foreach ($char in $Text.ToCharArray()) {
@@ -41,9 +38,7 @@ function Write-TypeText {
         Start-Sleep -Milliseconds $Delay
     }
 
-    if (-not $NoNewLine) {
-        Write-Host ""
-    }
+    Write-Host ""
 }
 
 function Write-Status {
@@ -70,12 +65,12 @@ function Show-Header {
 
     foreach ($line in $logo) {
         Write-Host $line -ForegroundColor Yellow
-        Start-Sleep -Milliseconds 55
+        Start-Sleep -Milliseconds 45
     }
 
     Write-Host ""
-    Write-TypeText "   GODPROJEXTH PYTHON GUI RUNNER" Yellow 18
-    Write-TypeText "   PowerShell  ->  Download Powershell.py  ->  Check Dependencies  ->  Open GUI" DarkYellow 8
+    Write-TypeText "   GODPROJEXTH PREMIUM RUNNER" Yellow 16
+    Write-TypeText "   PowerShell  ->  Secure Download  ->  Check Engine  ->  Open Interface" DarkYellow 8
     Write-Host ""
 }
 
@@ -110,12 +105,12 @@ function Ensure-Folder {
 }
 
 function Test-DownloadUrl {
-    if ([string]::IsNullOrWhiteSpace($PyUrl)) {
-        throw "PyUrl is empty."
+    if ([string]::IsNullOrWhiteSpace($PayloadUrl)) {
+        throw "Download URL is empty."
     }
 
     try {
-        $request = [System.Net.WebRequest]::Create($PyUrl)
+        $request = [System.Net.WebRequest]::Create($PayloadUrl)
         $request.Method = "HEAD"
         $request.UserAgent = "GODPROJEXTH"
         $response = $request.GetResponse()
@@ -127,7 +122,7 @@ function Test-DownloadUrl {
         }
     }
     catch {
-        throw "Cannot download Powershell.py. Check that Powershell.py is uploaded in GitHub Release Assets or fix `$PyUrl."
+        throw "Cannot download payload. Check GitHub Release Asset name and URL."
     }
 }
 
@@ -220,29 +215,29 @@ function Get-WindowedRuntime {
     return $Runtime
 }
 
-function Download-PythonFile {
+function Download-Payload {
     Ensure-Folder -Path $InstallDir
 
-    Show-Loader -Text "Checking download link   " -From 1 -To 18
+    Show-Loader -Text "Checking secure link     " -From 1 -To 18
     Test-DownloadUrl
 
-    Show-Loader -Text "Downloading Powershell.py" -From 19 -To 55
+    Show-Loader -Text "Downloading interface    " -From 19 -To 55
 
     try {
-        Invoke-WebRequest -Uri $PyUrl -OutFile $PyPath -UseBasicParsing
+        Invoke-WebRequest -Uri $PayloadUrl -OutFile $PayloadPath -UseBasicParsing
     }
     catch {
         throw "Download failed: $($_.Exception.Message)"
     }
 
-    if (-not (Test-Path -LiteralPath $PyPath)) {
-        throw "Download finished but Powershell.py was not found."
+    if (-not (Test-Path -LiteralPath $PayloadPath)) {
+        throw "Download finished but payload was not found."
     }
 
-    $fileSize = (Get-Item -LiteralPath $PyPath).Length
+    $fileSize = (Get-Item -LiteralPath $PayloadPath).Length
 
     if ($fileSize -lt 100) {
-        throw "Downloaded file is too small. It may not be the real Powershell.py."
+        throw "Downloaded payload is too small. It may not be the real file."
     }
 }
 
@@ -289,7 +284,7 @@ function Install-PythonPackage {
 function Install-GuiDependencies {
     param($Runtime)
 
-    Show-Loader -Text "Checking dependencies   " -From 56 -To 70
+    Show-Loader -Text "Checking dependencies    " -From 56 -To 70
 
     foreach ($module in $RequiredModules) {
         $importName = $module.ImportName
@@ -305,16 +300,16 @@ function Install-GuiDependencies {
     }
 }
 
-function Start-PythonGui {
+function Start-Interface {
     param($Runtime)
 
-    Show-Loader -Text "Opening GUI             " -From 71 -To 100
+    Show-Loader -Text "Opening interface        " -From 71 -To 100
 
     $windowed = Get-WindowedRuntime -Runtime $Runtime
 
     $args = @()
     $args += $windowed.Args
-    $args += @("`"$PyPath`"")
+    $args += @("`"$PayloadPath`"")
 
     Start-Process -FilePath $windowed.File -ArgumentList $args -WorkingDirectory $InstallDir
 }
@@ -329,11 +324,11 @@ try {
         throw "Python 3 not found. Install Python 3 first. Avoid Microsoft Store alias."
     }
 
-    Write-Status "Python found: $($runtime.File)" Green
+    Write-Status "Python engine found: $($runtime.File)" Green
 
-    Download-PythonFile
+    Download-Payload
     Install-GuiDependencies -Runtime $runtime
-    Start-PythonGui -Runtime $runtime
+    Start-Interface -Runtime $runtime
 
     Write-Host ""
     Write-Status "Done." Green
