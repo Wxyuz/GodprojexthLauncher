@@ -1,30 +1,51 @@
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-$AppName = "GODPROJEXTH_GUI"
+$AppName = "GODPROJEXTH"
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthLauncher"
-$PyPath = Join-Path $InstallDir "GODPROJEXTH_GUI.py"
+$PyPath = Join-Path $InstallDir "Powershell.py"
 
-# แก้ตรงนี้ให้เป็น RAW link ของไฟล์ .py จริง
-$PyUrl = "https://raw.githubusercontent.com/Wxyuz/GodprojexthLauncher/main/GODPROJEXTH_GUI.py"
+# ไฟล์ .py ของคุณชื่อ Powershell.py
+$PyUrl = "https://raw.githubusercontent.com/Wxyuz/GodprojexthLauncher/main/Powershell.py"
 
-function Write-GodStatus {
+$RequiredModules = @(
+    @{ ImportName = "PySide6"; PackageName = "PySide6" },
+    @{ ImportName = "requests"; PackageName = "requests" },
+    @{ ImportName = "PIL"; PackageName = "Pillow" }
+)
+
+function Show-Header {
+    Clear-Host
+    Write-Host ""
+    Write-Host "   ██████╗  ██████╗ ██████╗ ██████╗  ██████╗      ██╗███████╗██╗  ██╗████████╗██╗  ██╗" -ForegroundColor Yellow
+    Write-Host "  ██╔════╝ ██╔═══██╗██╔══██╗██╔══██╗██╔═══██╗     ██║██╔════╝╚██╗██╔╝╚══██╔══╝██║  ██║" -ForegroundColor Yellow
+    Write-Host "  ██║  ███╗██║   ██║██║  ██║██████╔╝██║   ██║     ██║█████╗   ╚███╔╝    ██║   ███████║" -ForegroundColor DarkYellow
+    Write-Host "  ██║   ██║██║   ██║██║  ██║██╔═══╝ ██║   ██║██   ██║██╔══╝   ██╔██╗    ██║   ██╔══██║" -ForegroundColor DarkYellow
+    Write-Host "  ╚██████╔╝╚██████╔╝██████╔╝██║     ╚██████╔╝╚█████╔╝███████╗██╔╝ ██╗   ██║   ██║  ██║" -ForegroundColor Yellow
+    Write-Host "   ╚═════╝  ╚═════╝ ╚═════╝ ╚═╝      ╚═════╝  ╚════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "   GODPROJEXTH PYTHON GUI RUNNER" -ForegroundColor Yellow
+    Write-Host "   PowerShell -> Download Powershell.py -> Open GUI" -ForegroundColor DarkYellow
+    Write-Host ""
+}
+
+function Write-Status {
     param(
         [string]$Text,
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow
     )
 
-    Write-Host "[GODPROJEXTH] $Text" -ForegroundColor $Color
+    Write-Host "   [GODPROJEXTH] $Text" -ForegroundColor $Color
 }
 
-function Show-GodLoader {
+function Show-Loader {
     param(
         [string]$Text,
         [int]$From,
         [int]$To
     )
 
-    $barWidth = 36
+    $barWidth = 42
 
     for ($i = $From; $i -le $To; $i++) {
         $filled = [math]::Floor(($i / 100) * $barWidth)
@@ -32,8 +53,8 @@ function Show-GodLoader {
 
         $bar = ("█" * $filled) + ("░" * $empty)
 
-        Write-Host "`r[GODPROJEXTH] $Text [$bar] $i%" -NoNewline -ForegroundColor Yellow
-        Start-Sleep -Milliseconds 18
+        Write-Host "`r   $Text [$bar] $i%" -NoNewline -ForegroundColor Yellow
+        Start-Sleep -Milliseconds 14
     }
 
     Write-Host ""
@@ -47,7 +68,7 @@ function Ensure-Folder {
     }
 }
 
-function Test-RawUrl {
+function Test-RawPythonUrl {
     if ([string]::IsNullOrWhiteSpace($PyUrl)) {
         throw "PyUrl is empty."
     }
@@ -57,40 +78,27 @@ function Test-RawUrl {
         $request.Method = "HEAD"
         $request.UserAgent = "GODPROJEXTH"
         $response = $request.GetResponse()
+        $statusCode = [int]$response.StatusCode
         $response.Close()
+
+        if ($statusCode -lt 200 -or $statusCode -ge 400) {
+            throw "HTTP $statusCode"
+        }
     }
     catch {
-        throw "โหลดไฟล์ .py ไม่ได้: 404 หรือ URL ผิด กรุณากด Raw ที่ไฟล์ .py แล้วเอาลิงก์ Raw มาใส่ใน `$PyUrl"
+        throw "โหลด Powershell.py ไม่ได้ อาจเป็น 404 หรือ URL ผิด ให้เช็คว่าใน GitHub มีไฟล์ชื่อ Powershell.py อยู่จริง และตัวพิมพ์เล็ก/ใหญ่ต้องตรง 100%"
     }
 }
 
 function Find-PythonRuntime {
     $candidates = New-Object System.Collections.ArrayList
 
-    $pyw = Get-Command "pyw.exe" -ErrorAction SilentlyContinue
-    if ($pyw) {
-        [void]$candidates.Add(@{
-            File = $pyw.Source
-            Args = @("-3")
-            Windowed = $true
-        })
-    }
-
-    $pythonw = Get-Command "pythonw.exe" -ErrorAction SilentlyContinue
-    if ($pythonw) {
-        [void]$candidates.Add(@{
-            File = $pythonw.Source
-            Args = @()
-            Windowed = $true
-        })
-    }
-
     $py = Get-Command "py.exe" -ErrorAction SilentlyContinue
     if ($py) {
         [void]$candidates.Add(@{
             File = $py.Source
             Args = @("-3")
-            Windowed = $false
+            UseWindowed = $false
         })
     }
 
@@ -99,8 +107,24 @@ function Find-PythonRuntime {
         [void]$candidates.Add(@{
             File = $python.Source
             Args = @()
-            Windowed = $false
+            UseWindowed = $false
         })
+    }
+
+    try {
+        $localPython = Get-ChildItem -Path "$env:LOCALAPPDATA\Programs\Python" -Filter "python.exe" -Recurse -ErrorAction SilentlyContinue |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+
+        if ($localPython) {
+            [void]$candidates.Add(@{
+                File = $localPython.FullName
+                Args = @()
+                UseWindowed = $false
+            })
+        }
+    }
+    catch {
     }
 
     foreach ($candidate in $candidates) {
@@ -122,99 +146,155 @@ function Find-PythonRuntime {
     return $null
 }
 
+function Get-WindowedRuntime {
+    param($Runtime)
+
+    try {
+        if ((Split-Path -Leaf $Runtime.File).ToLower() -eq "python.exe") {
+            $dir = Split-Path -Parent $Runtime.File
+            $pythonw = Join-Path $dir "pythonw.exe"
+
+            if (Test-Path -LiteralPath $pythonw) {
+                return @{
+                    File = $pythonw
+                    Args = @()
+                    UseWindowed = $true
+                }
+            }
+        }
+
+        $pyw = Get-Command "pyw.exe" -ErrorAction SilentlyContinue
+
+        if ($pyw -and ($pyw.Source -notlike "*\WindowsApps\*")) {
+            return @{
+                File = $pyw.Source
+                Args = @("-3")
+                UseWindowed = $true
+            }
+        }
+    }
+    catch {
+    }
+
+    return $Runtime
+}
+
 function Download-PythonFile {
     Ensure-Folder -Path $InstallDir
 
-    Show-GodLoader -Text "Checking raw link" -From 1 -To 20
+    Show-Loader -Text "Checking raw link       " -From 1 -To 18
+    Test-RawPythonUrl
 
-    Test-RawUrl
+    Show-Loader -Text "Downloading Powershell.py" -From 19 -To 55
 
-    Show-GodLoader -Text "Downloading GUI" -From 21 -To 65
-
-    Invoke-WebRequest -Uri $PyUrl -OutFile $PyPath -UseBasicParsing
+    try {
+        Invoke-WebRequest -Uri $PyUrl -OutFile $PyPath -UseBasicParsing
+    }
+    catch {
+        throw "ดาวน์โหลด Powershell.py ไม่สำเร็จ: $($_.Exception.Message)"
+    }
 
     if (-not (Test-Path -LiteralPath $PyPath)) {
-        throw "Download finished but .py file was not found."
+        throw "Download finished but Powershell.py was not found."
+    }
+}
+
+function Test-PythonModule {
+    param(
+        $Runtime,
+        [string]$ImportName
+    )
+
+    try {
+        $args = @()
+        $args += $Runtime.Args
+        $args += @("-c", "import $ImportName; print('OK')")
+
+        $output = & $Runtime.File @args 2>$null
+
+        if ($LASTEXITCODE -eq 0 -and (($output -join "").Trim() -eq "OK")) {
+            return $true
+        }
+    }
+    catch {
+    }
+
+    return $false
+}
+
+function Install-PythonPackage {
+    param(
+        $Runtime,
+        [string]$PackageName
+    )
+
+    $args = @()
+    $args += $Runtime.Args
+    $args += @("-m", "pip", "install", "--user", "--upgrade", $PackageName)
+
+    & $Runtime.File @args
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "ติดตั้ง package ไม่สำเร็จ: $PackageName"
     }
 }
 
 function Install-GuiDependencies {
     param($Runtime)
 
-    Show-GodLoader -Text "Checking dependencies" -From 66 -To 78
+    Show-Loader -Text "Checking dependencies   " -From 56 -To 70
 
-    $checkArgs = @()
-    $checkArgs += $Runtime.Args
-    $checkArgs += @("-c", "import PySide6; print('OK')")
+    foreach ($module in $RequiredModules) {
+        $importName = $module.ImportName
+        $packageName = $module.PackageName
 
-    try {
-        $output = & $Runtime.File @checkArgs 2>$null
-
-        if ($LASTEXITCODE -eq 0 -and (($output -join "").Trim() -eq "OK")) {
-            Write-GodStatus "PySide6 already installed." Green
-            return
+        if (Test-PythonModule -Runtime $Runtime -ImportName $importName) {
+            Write-Status "$packageName already installed." Green
+            continue
         }
-    }
-    catch {
-    }
 
-    Write-GodStatus "Installing PySide6..."
-
-    $pipArgs = @()
-    $pipArgs += $Runtime.Args
-    $pipArgs += @("-m", "pip", "install", "--user", "--upgrade", "PySide6")
-
-    & $Runtime.File @pipArgs
-
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to install PySide6."
+        Write-Status "Installing $packageName..."
+        Install-PythonPackage -Runtime $Runtime -PackageName $packageName
     }
 }
 
 function Start-PythonGui {
     param($Runtime)
 
-    Show-GodLoader -Text "Opening GUI" -From 79 -To 100
+    Show-Loader -Text "Opening GUI             " -From 71 -To 100
+
+    $windowed = Get-WindowedRuntime -Runtime $Runtime
 
     $args = @()
-    $args += $Runtime.Args
+    $args += $windowed.Args
     $args += @("`"$PyPath`"")
 
-    if ($Runtime.Windowed) {
-        Start-Process -FilePath $Runtime.File -ArgumentList $args -WorkingDirectory $InstallDir -WindowStyle Hidden
-    }
-    else {
-        Start-Process -FilePath $Runtime.File -ArgumentList $args -WorkingDirectory $InstallDir
-    }
+    Start-Process -FilePath $windowed.File -ArgumentList $args -WorkingDirectory $InstallDir
 }
 
 try {
-    Clear-Host
-    Write-Host ""
-    Write-Host "  GODPROJEXTH PYTHON GUI RUNNER" -ForegroundColor Yellow
-    Write-Host "  PowerShell -> Download .py -> Open GUI" -ForegroundColor DarkYellow
-    Write-Host ""
+    Show-Header
 
     $runtime = Find-PythonRuntime
 
     if ($null -eq $runtime) {
-        throw "ไม่พบ Python 3 ในเครื่องนี้"
+        throw "ไม่พบ Python 3 ในเครื่องนี้ กรุณาติดตั้ง Python 3 ก่อน"
     }
 
-    Write-GodStatus "Python found: $($runtime.File)"
+    Write-Status "Python found: $($runtime.File)" Green
 
     Download-PythonFile
     Install-GuiDependencies -Runtime $runtime
     Start-PythonGui -Runtime $runtime
 
     Write-Host ""
-    Write-GodStatus "Done." Green
+    Write-Status "Done." Green
 }
 catch {
     Write-Host ""
-    Write-Host "[GODPROJEXTH ERROR]" -ForegroundColor Red
-    Write-Host $_.Exception.Message -ForegroundColor Red
+    Write-Host "   [GODPROJEXTH ERROR]" -ForegroundColor Red
+    Write-Host "   $($_.Exception.Message)" -ForegroundColor Red
     Write-Host ""
-    Write-Host "Press Enter to close..." -ForegroundColor Yellow
+    Write-Host "   Press Enter to close..." -ForegroundColor Yellow
     [void][System.Console]::ReadLine()
 }
