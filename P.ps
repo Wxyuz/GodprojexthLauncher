@@ -5,13 +5,8 @@ $AppName = "GODPROJEXTH_GUI"
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthLauncher"
 $PyPath = Join-Path $InstallDir "GODPROJEXTH_GUI.py"
 
-# ใส่ลิงก์ RAW ของไฟล์ .py ของคุณตรงนี้
-# ตัวอย่าง:
-# https://raw.githubusercontent.com/Wxyuz/GodprojexthLauncher/main/GODPROJEXTH_GUI.py
+# แก้ตรงนี้ให้เป็น RAW link ของไฟล์ .py จริง
 $PyUrl = "https://raw.githubusercontent.com/Wxyuz/GodprojexthLauncher/main/GODPROJEXTH_GUI.py"
-
-# ถ้าไม่ต้องการเช็ค SHA256 ให้ปล่อยว่างไว้
-$ExpectedSha256 = ""
 
 function Write-GodStatus {
     param(
@@ -22,11 +17,50 @@ function Write-GodStatus {
     Write-Host "[GODPROJEXTH] $Text" -ForegroundColor $Color
 }
 
+function Show-GodLoader {
+    param(
+        [string]$Text,
+        [int]$From,
+        [int]$To
+    )
+
+    $barWidth = 36
+
+    for ($i = $From; $i -le $To; $i++) {
+        $filled = [math]::Floor(($i / 100) * $barWidth)
+        $empty = $barWidth - $filled
+
+        $bar = ("█" * $filled) + ("░" * $empty)
+
+        Write-Host "`r[GODPROJEXTH] $Text [$bar] $i%" -NoNewline -ForegroundColor Yellow
+        Start-Sleep -Milliseconds 18
+    }
+
+    Write-Host ""
+}
+
 function Ensure-Folder {
     param([string]$Path)
 
     if (-not (Test-Path -LiteralPath $Path)) {
         New-Item -ItemType Directory -Path $Path -Force | Out-Null
+    }
+}
+
+function Test-RawUrl {
+    if ([string]::IsNullOrWhiteSpace($PyUrl)) {
+        throw "PyUrl is empty."
+    }
+
+    try {
+        $request = [System.Net.WebRequest]::Create($PyUrl)
+        $request.Method = "HEAD"
+        $request.UserAgent = "GODPROJEXTH"
+        $response = $request.GetResponse()
+        $response.Close()
+    }
+    catch {
+        throw "โหลดไฟล์ .py ไม่ได้: 404 หรือ URL ผิด กรุณากด Raw ที่ไฟล์ .py แล้วเอาลิงก์ Raw มาใส่ใน `$PyUrl"
     }
 }
 
@@ -69,34 +103,6 @@ function Find-PythonRuntime {
         })
     }
 
-    try {
-        $localPythonw = Get-ChildItem -Path "$env:LOCALAPPDATA\Programs\Python" -Filter "pythonw.exe" -Recurse -ErrorAction SilentlyContinue |
-            Sort-Object FullName -Descending |
-            Select-Object -First 1
-
-        if ($localPythonw) {
-            [void]$candidates.Add(@{
-                File = $localPythonw.FullName
-                Args = @()
-                Windowed = $true
-            })
-        }
-
-        $localPython = Get-ChildItem -Path "$env:LOCALAPPDATA\Programs\Python" -Filter "python.exe" -Recurse -ErrorAction SilentlyContinue |
-            Sort-Object FullName -Descending |
-            Select-Object -First 1
-
-        if ($localPython) {
-            [void]$candidates.Add(@{
-                File = $localPython.FullName
-                Args = @()
-                Windowed = $false
-            })
-        }
-    }
-    catch {
-    }
-
     foreach ($candidate in $candidates) {
         try {
             $checkArgs = @()
@@ -117,13 +123,14 @@ function Find-PythonRuntime {
 }
 
 function Download-PythonFile {
-    if ([string]::IsNullOrWhiteSpace($PyUrl)) {
-        throw "PyUrl is empty. Please put your RAW .py link in `$PyUrl."
-    }
-
     Ensure-Folder -Path $InstallDir
 
-    Write-GodStatus "Downloading Python GUI..."
+    Show-GodLoader -Text "Checking raw link" -From 1 -To 20
+
+    Test-RawUrl
+
+    Show-GodLoader -Text "Downloading GUI" -From 21 -To 65
+
     Invoke-WebRequest -Uri $PyUrl -OutFile $PyPath -UseBasicParsing
 
     if (-not (Test-Path -LiteralPath $PyPath)) {
@@ -131,26 +138,10 @@ function Download-PythonFile {
     }
 }
 
-function Verify-PythonFile {
-    if ([string]::IsNullOrWhiteSpace($ExpectedSha256)) {
-        Write-GodStatus "SHA256 check skipped."
-        return
-    }
-
-    Write-GodStatus "Checking SHA256..."
-
-    $actual = (Get-FileHash -Algorithm SHA256 -Path $PyPath).Hash.ToUpperInvariant()
-
-    if ($actual -ne $ExpectedSha256.ToUpperInvariant()) {
-        Remove-Item -LiteralPath $PyPath -Force -ErrorAction SilentlyContinue
-        throw "SHA256 mismatch. Downloaded .py is not expected file."
-    }
-}
-
-function Install-SafeGuiDependencies {
+function Install-GuiDependencies {
     param($Runtime)
 
-    Write-GodStatus "Checking GUI dependencies..."
+    Show-GodLoader -Text "Checking dependencies" -From 66 -To 78
 
     $checkArgs = @()
     $checkArgs += $Runtime.Args
@@ -183,11 +174,11 @@ function Install-SafeGuiDependencies {
 function Start-PythonGui {
     param($Runtime)
 
+    Show-GodLoader -Text "Opening GUI" -From 79 -To 100
+
     $args = @()
     $args += $Runtime.Args
     $args += @("`"$PyPath`"")
-
-    Write-GodStatus "Opening Python GUI..." Green
 
     if ($Runtime.Windowed) {
         Start-Process -FilePath $Runtime.File -ArgumentList $args -WorkingDirectory $InstallDir -WindowStyle Hidden
@@ -207,14 +198,13 @@ try {
     $runtime = Find-PythonRuntime
 
     if ($null -eq $runtime) {
-        throw "Python 3 not found. Please install Python 3 first."
+        throw "ไม่พบ Python 3 ในเครื่องนี้"
     }
 
     Write-GodStatus "Python found: $($runtime.File)"
 
     Download-PythonFile
-    Verify-PythonFile
-    Install-SafeGuiDependencies -Runtime $runtime
+    Install-GuiDependencies -Runtime $runtime
     Start-PythonGui -Runtime $runtime
 
     Write-Host ""
