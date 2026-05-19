@@ -1,12 +1,19 @@
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-$AppName = "POWERSHELLGODPROJEXTH"
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ExePath = Join-Path $ScriptDir "POWERSHELLGODPROJEXTH.exe"
-$ExpectedSha256 = "C26D4FC1601831B2E0A29C698F9612128DF882FA22680FA4C317A4CE812036A6"
+$AppName = "GODPROJEXTH_GUI"
+$InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthLauncher"
+$PyPath = Join-Path $InstallDir "GODPROJEXTH_GUI.py"
 
-function Write-Status {
+# ใส่ลิงก์ RAW ของไฟล์ .py ของคุณตรงนี้
+# ตัวอย่าง:
+# https://raw.githubusercontent.com/Wxyuz/GodprojexthLauncher/main/GODPROJEXTH_GUI.py
+$PyUrl = "https://raw.githubusercontent.com/Wxyuz/GodprojexthLauncher/main/GODPROJEXTH_GUI.py"
+
+# ถ้าไม่ต้องการเช็ค SHA256 ให้ปล่อยว่างไว้
+$ExpectedSha256 = ""
+
+function Write-GodStatus {
     param(
         [string]$Text,
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow
@@ -15,28 +22,203 @@ function Write-Status {
     Write-Host "[GODPROJEXTH] $Text" -ForegroundColor $Color
 }
 
+function Ensure-Folder {
+    param([string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        New-Item -ItemType Directory -Path $Path -Force | Out-Null
+    }
+}
+
+function Find-PythonRuntime {
+    $candidates = New-Object System.Collections.ArrayList
+
+    $pyw = Get-Command "pyw.exe" -ErrorAction SilentlyContinue
+    if ($pyw) {
+        [void]$candidates.Add(@{
+            File = $pyw.Source
+            Args = @("-3")
+            Windowed = $true
+        })
+    }
+
+    $pythonw = Get-Command "pythonw.exe" -ErrorAction SilentlyContinue
+    if ($pythonw) {
+        [void]$candidates.Add(@{
+            File = $pythonw.Source
+            Args = @()
+            Windowed = $true
+        })
+    }
+
+    $py = Get-Command "py.exe" -ErrorAction SilentlyContinue
+    if ($py) {
+        [void]$candidates.Add(@{
+            File = $py.Source
+            Args = @("-3")
+            Windowed = $false
+        })
+    }
+
+    $python = Get-Command "python.exe" -ErrorAction SilentlyContinue
+    if ($python) {
+        [void]$candidates.Add(@{
+            File = $python.Source
+            Args = @()
+            Windowed = $false
+        })
+    }
+
+    try {
+        $localPythonw = Get-ChildItem -Path "$env:LOCALAPPDATA\Programs\Python" -Filter "pythonw.exe" -Recurse -ErrorAction SilentlyContinue |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+
+        if ($localPythonw) {
+            [void]$candidates.Add(@{
+                File = $localPythonw.FullName
+                Args = @()
+                Windowed = $true
+            })
+        }
+
+        $localPython = Get-ChildItem -Path "$env:LOCALAPPDATA\Programs\Python" -Filter "python.exe" -Recurse -ErrorAction SilentlyContinue |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+
+        if ($localPython) {
+            [void]$candidates.Add(@{
+                File = $localPython.FullName
+                Args = @()
+                Windowed = $false
+            })
+        }
+    }
+    catch {
+    }
+
+    foreach ($candidate in $candidates) {
+        try {
+            $checkArgs = @()
+            $checkArgs += $candidate.Args
+            $checkArgs += @("-c", "import sys; print(sys.version_info.major)")
+
+            $output = & $candidate.File @checkArgs 2>$null
+
+            if ($LASTEXITCODE -eq 0 -and (($output -join "").Trim() -eq "3")) {
+                return $candidate
+            }
+        }
+        catch {
+        }
+    }
+
+    return $null
+}
+
+function Download-PythonFile {
+    if ([string]::IsNullOrWhiteSpace($PyUrl)) {
+        throw "PyUrl is empty. Please put your RAW .py link in `$PyUrl."
+    }
+
+    Ensure-Folder -Path $InstallDir
+
+    Write-GodStatus "Downloading Python GUI..."
+    Invoke-WebRequest -Uri $PyUrl -OutFile $PyPath -UseBasicParsing
+
+    if (-not (Test-Path -LiteralPath $PyPath)) {
+        throw "Download finished but .py file was not found."
+    }
+}
+
+function Verify-PythonFile {
+    if ([string]::IsNullOrWhiteSpace($ExpectedSha256)) {
+        Write-GodStatus "SHA256 check skipped."
+        return
+    }
+
+    Write-GodStatus "Checking SHA256..."
+
+    $actual = (Get-FileHash -Algorithm SHA256 -Path $PyPath).Hash.ToUpperInvariant()
+
+    if ($actual -ne $ExpectedSha256.ToUpperInvariant()) {
+        Remove-Item -LiteralPath $PyPath -Force -ErrorAction SilentlyContinue
+        throw "SHA256 mismatch. Downloaded .py is not expected file."
+    }
+}
+
+function Install-SafeGuiDependencies {
+    param($Runtime)
+
+    Write-GodStatus "Checking GUI dependencies..."
+
+    $checkArgs = @()
+    $checkArgs += $Runtime.Args
+    $checkArgs += @("-c", "import PySide6; print('OK')")
+
+    try {
+        $output = & $Runtime.File @checkArgs 2>$null
+
+        if ($LASTEXITCODE -eq 0 -and (($output -join "").Trim() -eq "OK")) {
+            Write-GodStatus "PySide6 already installed." Green
+            return
+        }
+    }
+    catch {
+    }
+
+    Write-GodStatus "Installing PySide6..."
+
+    $pipArgs = @()
+    $pipArgs += $Runtime.Args
+    $pipArgs += @("-m", "pip", "install", "--user", "--upgrade", "PySide6")
+
+    & $Runtime.File @pipArgs
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to install PySide6."
+    }
+}
+
+function Start-PythonGui {
+    param($Runtime)
+
+    $args = @()
+    $args += $Runtime.Args
+    $args += @("`"$PyPath`"")
+
+    Write-GodStatus "Opening Python GUI..." Green
+
+    if ($Runtime.Windowed) {
+        Start-Process -FilePath $Runtime.File -ArgumentList $args -WorkingDirectory $InstallDir -WindowStyle Hidden
+    }
+    else {
+        Start-Process -FilePath $Runtime.File -ArgumentList $args -WorkingDirectory $InstallDir
+    }
+}
+
 try {
     Clear-Host
     Write-Host ""
-    Write-Host "  GODPROJEXTH EXE LAUNCHER" -ForegroundColor Yellow
+    Write-Host "  GODPROJEXTH PYTHON GUI RUNNER" -ForegroundColor Yellow
+    Write-Host "  PowerShell -> Download .py -> Open GUI" -ForegroundColor DarkYellow
     Write-Host ""
 
-    if (-not (Test-Path -LiteralPath $ExePath)) {
-        throw "Cannot find POWERSHELLGODPROJEXTH.exe beside P.ps"
+    $runtime = Find-PythonRuntime
+
+    if ($null -eq $runtime) {
+        throw "Python 3 not found. Please install Python 3 first."
     }
 
-    Write-Status "Checking SHA256..."
-    $ActualSha256 = (Get-FileHash -Algorithm SHA256 -Path $ExePath).Hash.ToUpperInvariant()
+    Write-GodStatus "Python found: $($runtime.File)"
 
-    if ($ActualSha256 -ne $ExpectedSha256.ToUpperInvariant()) {
-        throw "SHA256 mismatch. File changed or corrupted."
-    }
-
-    Write-Status "Launching $AppName..." Green
-    Start-Process -FilePath $ExePath -WorkingDirectory $ScriptDir
+    Download-PythonFile
+    Verify-PythonFile
+    Install-SafeGuiDependencies -Runtime $runtime
+    Start-PythonGui -Runtime $runtime
 
     Write-Host ""
-    Write-Status "Done." Green
+    Write-GodStatus "Done." Green
 }
 catch {
     Write-Host ""
