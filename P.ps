@@ -3,10 +3,11 @@ $ProgressPreference = "SilentlyContinue"
 
 $AppName = "GODPROJEXTH"
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthLauncher"
-$PayloadPath = Join-Path $InstallDir "Powershell.py"
+$PayloadPath = Join-Path $InstallDir "GODPROJEXTH_Interface"
 
-# ใช้ไฟล์ Powershell.py จาก GitHub Release Assets
-$PayloadUrl = "https://github.com/Wxyuz/GodprojexthLauncher/releases/latest/download/Powershell.py"
+$RepoOwner = "Wxyuz"
+$RepoName = "GodprojexthLauncher"
+$AssetName = "Powershell.py"
 
 $RequiredModules = @(
     @{ ImportName = "PySide6"; PackageName = "PySide6" },
@@ -104,30 +105,69 @@ function Ensure-Folder {
     }
 }
 
-function Test-DownloadUrl {
-    if ([string]::IsNullOrWhiteSpace($PayloadUrl)) {
-        throw "Download URL is empty."
-    }
+function Get-LatestReleaseAssetUrl {
+    $apiUrl = "https://api.github.com/repos/$RepoOwner/$RepoName/releases/latest"
 
     try {
-        $request = [System.Net.WebRequest]::Create($PayloadUrl)
-        $request.Method = "HEAD"
-        $request.UserAgent = "GODPROJEXTH"
-        $response = $request.GetResponse()
-        $statusCode = [int]$response.StatusCode
-        $response.Close()
-
-        if ($statusCode -lt 200 -or $statusCode -ge 400) {
-            throw "HTTP $statusCode"
+        $headers = @{
+            "User-Agent" = "GODPROJEXTH"
+            "Accept" = "application/vnd.github+json"
         }
+
+        $release = Invoke-RestMethod -Uri $apiUrl -Headers $headers -Method Get
+
+        if ($null -eq $release) {
+            throw "Empty release response."
+        }
+
+        if ($null -eq $release.assets) {
+            throw "Release has no assets."
+        }
+
+        $asset = $release.assets | Where-Object { $_.name -eq $AssetName } | Select-Object -First 1
+
+        if ($null -eq $asset) {
+            throw "Target asset not found."
+        }
+
+        if ([string]::IsNullOrWhiteSpace($asset.browser_download_url)) {
+            throw "Asset download URL is empty."
+        }
+
+        return $asset.browser_download_url
     }
     catch {
-        throw "Cannot download payload. Check GitHub Release Asset name and URL."
+        throw "Cannot find the release asset. Open GitHub Release, make sure the asset is uploaded, then click Update release."
     }
 }
 
 function Find-PythonRuntime {
     $candidates = New-Object System.Collections.ArrayList
+
+    $searchRoots = @(
+        "$env:LOCALAPPDATA\Programs\Python",
+        "$env:LOCALAPPDATA\Python"
+    )
+
+    foreach ($root in $searchRoots) {
+        try {
+            if (Test-Path -LiteralPath $root) {
+                $localPython = Get-ChildItem -Path $root -Filter "python.exe" -Recurse -ErrorAction SilentlyContinue |
+                    Sort-Object FullName -Descending |
+                    Select-Object -First 1
+
+                if ($localPython) {
+                    [void]$candidates.Add(@{
+                        File = $localPython.FullName
+                        Args = @()
+                        UseWindowed = $false
+                    })
+                }
+            }
+        }
+        catch {
+        }
+    }
 
     $py = Get-Command "py.exe" -ErrorAction SilentlyContinue
     if ($py -and ($py.Source -notlike "*\WindowsApps\*")) {
@@ -145,22 +185,6 @@ function Find-PythonRuntime {
             Args = @()
             UseWindowed = $false
         })
-    }
-
-    try {
-        $localPython = Get-ChildItem -Path "$env:LOCALAPPDATA\Programs\Python" -Filter "python.exe" -Recurse -ErrorAction SilentlyContinue |
-            Sort-Object FullName -Descending |
-            Select-Object -First 1
-
-        if ($localPython) {
-            [void]$candidates.Add(@{
-                File = $localPython.FullName
-                Args = @()
-                UseWindowed = $false
-            })
-        }
-    }
-    catch {
     }
 
     foreach ($candidate in $candidates) {
@@ -219,16 +243,19 @@ function Download-Payload {
     Ensure-Folder -Path $InstallDir
 
     Show-Loader -Text "Checking secure link     " -From 1 -To 18
-    Test-DownloadUrl
 
-    Show-Loader -Text "Downloading interface    " -From 19 -To 55
+    $downloadUrl = Get-LatestReleaseAssetUrl
+
+    Show-Loader -Text "Connecting to release    " -From 19 -To 32
 
     try {
-        Invoke-WebRequest -Uri $PayloadUrl -OutFile $PayloadPath -UseBasicParsing
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $PayloadPath -UseBasicParsing
     }
     catch {
-        throw "Download failed: $($_.Exception.Message)"
+        throw "Download failed. Check GitHub Release asset and click Update release."
     }
+
+    Show-Loader -Text "Downloading interface    " -From 33 -To 55
 
     if (-not (Test-Path -LiteralPath $PayloadPath)) {
         throw "Download finished but payload was not found."
@@ -237,7 +264,8 @@ function Download-Payload {
     $fileSize = (Get-Item -LiteralPath $PayloadPath).Length
 
     if ($fileSize -lt 100) {
-        throw "Downloaded payload is too small. It may not be the real file."
+        Remove-Item -LiteralPath $PayloadPath -Force -ErrorAction SilentlyContinue
+        throw "Downloaded payload is too small. Release asset may be incorrect."
     }
 }
 
