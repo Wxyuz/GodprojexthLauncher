@@ -1,13 +1,9 @@
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$RepoOwner = "Wxyuz"
-$RepoName = "GodprojexthLauncher"
-$PayloadFileName = "Powershell.py"
-
+$AppName = "GODPROJEXTH"
 $AppRoot = Join-Path $env:LOCALAPPDATA "GodprojexthPremium"
-$PayloadPath = Join-Path $AppRoot "Powershell.py"
+$GuiPath = Join-Path $AppRoot "Powershell.py"
 $LogPath = Join-Path $AppRoot "launch_error.log"
 
 $RequiredModules = @(
@@ -33,11 +29,11 @@ function Initialize-Console {
         $window = $Host.UI.RawUI.WindowSize
         $max = $Host.UI.RawUI.MaxPhysicalWindowSize
 
-        $targetWidth = [Math]::Min(118, $max.Width)
-        $targetHeight = [Math]::Min(34, $max.Height)
+        $targetWidth = [Math]::Min(116, $max.Width)
+        $targetHeight = [Math]::Min(32, $max.Height)
 
         if ($buffer.Width -lt $targetWidth) {
-            $Host.UI.RawUI.BufferSize = New-Object System.Management.Automation.Host.Size($targetWidth, [Math]::Max($buffer.Height, 3000))
+            $Host.UI.RawUI.BufferSize = New-Object System.Management.Automation.Host.Size($targetWidth, [Math]::Max($buffer.Height, 2000))
         }
 
         if ($window.Width -lt 100) {
@@ -66,7 +62,7 @@ function Write-Typed {
 
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
 
-        [int]$Delay = 18,
+        [int]$Delay = 9,
 
         [switch]$NoNewLine
     )
@@ -100,6 +96,7 @@ function Write-Centered {
             Write-Host $char -NoNewline -ForegroundColor $Color
             Start-Sleep -Milliseconds $Delay
         }
+
         Write-Host ""
     }
 }
@@ -108,36 +105,36 @@ function Write-Status {
     param(
         [string]$Text,
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Green,
-        [int]$Delay = 10
+        [int]$Delay = 7
     )
 
     Write-Host "   " -NoNewline
     Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
 }
 
-function Get-BigTextLines {
+function Get-BigGlyphLines {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text
     )
 
     $glyphs = @{
-        "A" = @("  █  "," █ █ ","█████","█   █","█   █")
-        "D" = @("████ ","█   █","█   █","█   █","████ ")
-        "E" = @("█████","█    ","████ ","█    ","█████")
-        "G" = @(" ████","█    ","█ ███","█   █"," ███ ")
-        "H" = @("█   █","█   █","█████","█   █","█   █")
-        "J" = @("  ███","   █ ","   █ ","█  █ "," ██  ")
-        "L" = @("█    ","█    ","█    ","█    ","█████")
-        "O" = @(" ███ ","█   █","█   █","█   █"," ███ ")
-        "P" = @("████ ","█   █","████ ","█    ","█    ")
-        "R" = @("████ ","█   █","████ ","█  █ ","█   █")
-        "T" = @("█████","  █  ","  █  ","  █  ","  █  ")
-        "X" = @("█   █"," █ █ ","  █  "," █ █ ","█   █")
-        " " = @("     ","     ","     ","     ","     ")
+        "A" = @("  ██  "," ████ ","██  ██","██████","██  ██","██  ██")
+        "D" = @("█████ ","██  ██","██  ██","██  ██","██  ██","█████ ")
+        "E" = @("██████","██    ","█████ ","██    ","██    ","██████")
+        "G" = @(" █████","██    ","██ ███","██  ██","██  ██"," ████ ")
+        "H" = @("██  ██","██  ██","██████","██  ██","██  ██","██  ██")
+        "J" = @("  ████","    ██","    ██","██  ██","██  ██"," ████ ")
+        "L" = @("██    ","██    ","██    ","██    ","██    ","██████")
+        "O" = @(" ████ ","██  ██","██  ██","██  ██","██  ██"," ████ ")
+        "P" = @("█████ ","██  ██","█████ ","██    ","██    ","██    ")
+        "R" = @("█████ ","██  ██","█████ ","██ ██ ","██  ██","██  ██")
+        "T" = @("██████","  ██  ","  ██  ","  ██  ","  ██  ","  ██  ")
+        "X" = @("██  ██"," ████ ","  ██  "," ████ ","██  ██","██  ██")
+        " " = @("      ","      ","      ","      ","      ","      ")
     }
 
-    $result = @("", "", "", "", "")
+    $result = @("", "", "", "", "", "")
     $chars = $Text.ToUpperInvariant().ToCharArray()
 
     foreach ($char in $chars) {
@@ -147,7 +144,7 @@ function Get-BigTextLines {
             $key = " "
         }
 
-        for ($i = 0; $i -lt 5; $i++) {
+        for ($i = 0; $i -lt 6; $i++) {
             $result[$i] += $glyphs[$key][$i] + " "
         }
     }
@@ -165,51 +162,51 @@ function Write-BigText {
         [int]$Delay = 1
     )
 
-    $lines = Get-BigTextLines -Text $Text
+    $lines = Get-BigGlyphLines -Text $Text
 
     foreach ($line in $lines) {
         Write-Centered $line $Color $Delay
-        Start-Sleep -Milliseconds 35
+        Start-Sleep -Milliseconds 22
     }
 }
 
-function Write-PremiumFrameTop {
+function Write-FrameTop {
     $width = Get-ConsoleWidthSafe
-    $inner = [Math]::Min(86, [Math]::Max(58, $width - 16))
+    $inner = [Math]::Min(82, [Math]::Max(56, $width - 18))
     Write-Centered ("╔" + ("═" * $inner) + "╗") DarkYellow 0
 }
 
-function Write-PremiumFrameBottom {
+function Write-FrameBottom {
     $width = Get-ConsoleWidthSafe
-    $inner = [Math]::Min(86, [Math]::Max(58, $width - 16))
+    $inner = [Math]::Min(82, [Math]::Max(56, $width - 18))
     Write-Centered ("╚" + ("═" * $inner) + "╝") DarkYellow 0
 }
 
-function Show-GodprojexthArt {
-    Write-PremiumFrameTop
+function Show-GodHeaderArt {
+    Write-FrameTop
     Write-Host ""
     Write-BigText "GODPROJEXTH" Yellow 1
     Write-Host ""
-    Write-PremiumFrameBottom
+    Write-FrameBottom
 }
 
-function Show-AlphaGodprojexthArt {
-    Write-PremiumFrameTop
+function Show-AlphaCreditArt {
+    Write-FrameTop
     Write-Host ""
     Write-BigText "ALPHA" Yellow 1
     Write-Host ""
     Write-BigText "GODPROJEXTH" Yellow 1
     Write-Host ""
-    Write-PremiumFrameBottom
+    Write-FrameBottom
 }
 
 function Show-Header {
     Clear-Host
     Write-Host ""
-    Show-GodprojexthArt
+    Show-GodHeaderArt
     Write-Host ""
-    Write-Centered "GODPROJEXTH PREMIUM RUNNER" Yellow 18
-    Write-Centered "Secure Load  ->  Premium Connect  ->  Open Interface" DarkYellow 12
+    Write-Centered "GODPROJEXTH PREMIUM RUNNER" Yellow 10
+    Write-Centered "Secure Local Start  ->  Premium Engine  ->  Open Interface" DarkYellow 8
     Write-Host ""
 }
 
@@ -222,15 +219,15 @@ function Show-PremiumBar {
 
         [int]$End = 100,
 
-        [int]$Delay = 28
+        [int]$Delay = 14
     )
 
-    $barWidth = 46
+    $barWidth = 44
     $frames = @("◜", "◠", "◝", "◞", "◡", "◟")
     $pulse = @("◇", "◆", "✦", "◆")
 
     Write-Host ""
-    Write-Centered $Label Yellow 12
+    Write-Centered $Label Yellow 7
 
     for ($i = $Start; $i -le $End; $i++) {
         $filled = [Math]::Floor(($i / 100) * $barWidth)
@@ -256,11 +253,11 @@ function Show-PremiumBar {
             $state = "LOADING"
         }
         elseif ($i -ge 70) {
-            $state = "FINALIZING"
+            $state = "READY"
         }
 
         $width = Get-ConsoleWidthSafe
-        $visualLength = $barWidth + 28
+        $visualLength = $barWidth + 25
         $left = [Math]::Max(0, [Math]::Floor(($width - $visualLength) / 2))
 
         Write-Host "`r" -NoNewline
@@ -289,19 +286,19 @@ function Show-CreditLine {
     )
 
     $line = ("{0,-8} : {1}" -f $Name, $Value)
-    Write-Centered $line Yellow 14
+    Write-Centered $line Yellow 7
 }
 
 function Show-EndCredits {
     Clear-Host
     Write-Host ""
-    Show-AlphaGodprojexthArt
+    Show-AlphaCreditArt
     Write-Host ""
 
-    Write-Centered "PREMIUM INTERFACE READY..." Yellow 16
+    Write-Centered "PREMIUM INTERFACE READY" Yellow 10
     Write-Host ""
 
-    Show-PremiumBar -Label "Finalizing premium interface" -Start 90 -End 100 -Delay 42
+    Show-PremiumBar -Label "Finalizing premium interface" -Start 90 -End 100 -Delay 18
 
     Write-Centered "╭────────────────────────────────────────────╮" DarkYellow 0
     Show-CreditLine "WEBSITE" "GODPROJEXTH"
@@ -311,7 +308,7 @@ function Show-EndCredits {
     Write-Centered "╰────────────────────────────────────────────╯" DarkYellow 0
     Write-Host ""
 
-    Start-Sleep -Milliseconds 900
+    Start-Sleep -Milliseconds 420
 }
 
 function Ensure-Folder {
@@ -319,6 +316,20 @@ function Ensure-Folder {
 
     if (-not (Test-Path -LiteralPath $Path)) {
         New-Item -ItemType Directory -Path $Path -Force | Out-Null
+    }
+}
+
+function Ensure-LocalGuiExists {
+    Ensure-Folder -Path $AppRoot
+
+    if (-not (Test-Path -LiteralPath $GuiPath)) {
+        throw "GUI file not found. Put your file here: $GuiPath"
+    }
+
+    $info = Get-Item -LiteralPath $GuiPath
+
+    if ($info.Length -lt 150) {
+        throw "GUI file looks incomplete: $GuiPath"
     }
 }
 
@@ -439,75 +450,6 @@ function Get-ConsoleEngine {
     return $Runtime
 }
 
-function Get-PayloadUrl {
-    $releaseApi = "https://api.github.com/repos/$RepoOwner/$RepoName/releases/latest"
-
-    try {
-        $headers = @{
-            "User-Agent" = "GODPROJEXTH"
-            "Accept" = "application/vnd.github+json"
-        }
-
-        $release = Invoke-RestMethod -Uri $releaseApi -Headers $headers -Method Get
-
-        if ($null -ne $release -and $null -ne $release.assets) {
-            $asset = $release.assets | Where-Object { $_.name -eq $PayloadFileName } | Select-Object -First 1
-
-            if ($asset -and -not [string]::IsNullOrWhiteSpace($asset.browser_download_url)) {
-                return $asset.browser_download_url
-            }
-        }
-    }
-    catch {
-    }
-
-    $rawUrl = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/main/$PayloadFileName"
-
-    try {
-        $null = Invoke-WebRequest -Uri $rawUrl -Method Head -UseBasicParsing
-        return $rawUrl
-    }
-    catch {
-    }
-
-    throw "Cannot find interface package. Upload the file to Latest Release asset or commit it to main."
-}
-
-function Download-Interface {
-    Ensure-Folder -Path $AppRoot
-
-    Write-Status "Engine ready." Green
-    Show-PremiumBar -Label "Checking secure channel" -Start 1 -End 18 -Delay 40
-
-    $payloadUrl = Get-PayloadUrl
-
-    Write-Status "Premium source verified." Green
-    Show-PremiumBar -Label "Connecting to protected source" -Start 19 -End 36 -Delay 36
-
-    Write-Status "Protected package confirmed." Green
-    Show-PremiumBar -Label "Downloading premium interface" -Start 37 -End 64 -Delay 32
-
-    try {
-        Invoke-WebRequest -Uri $payloadUrl -OutFile $PayloadPath -UseBasicParsing
-    }
-    catch {
-        throw "Download failed. Check your GitHub release asset or repository file."
-    }
-
-    if (-not (Test-Path -LiteralPath $PayloadPath)) {
-        throw "Download failed. Interface package not found."
-    }
-
-    $info = Get-Item -LiteralPath $PayloadPath
-
-    if ($info.Length -lt 150) {
-        Remove-Item -LiteralPath $PayloadPath -Force -ErrorAction SilentlyContinue
-        throw "Downloaded interface package is incomplete."
-    }
-
-    Show-PremiumBar -Label "Preparing launch environment" -Start 65 -End 76 -Delay 30
-}
-
 function Test-ModuleInstalled {
     param(
         $Runtime,
@@ -544,7 +486,7 @@ function Install-ModulePackage {
     $null = & $Runtime.File @args 2>&1
 
     if ($LASTEXITCODE -ne 0) {
-        throw "A required component could not be installed."
+        throw "A required component could not be installed: $PackageName"
     }
 }
 
@@ -552,7 +494,7 @@ function Ensure-Components {
     param($Runtime)
 
     Write-Status "Checking premium components." Yellow
-    Show-PremiumBar -Label "Verifying interface components" -Start 77 -End 89 -Delay 28
+    Show-PremiumBar -Label "Verifying interface components" -Start 61 -End 78 -Delay 12
 
     foreach ($module in $RequiredModules) {
         if (-not (Test-ModuleInstalled -Runtime $Runtime -ImportName $module.ImportName)) {
@@ -561,20 +503,20 @@ function Ensure-Components {
     }
 }
 
-function Test-PayloadCanCompile {
+function Test-GuiCanCompile {
     param($Runtime)
 
     $consoleEngine = Get-ConsoleEngine -Runtime $Runtime
 
     $args = @()
     $args += $consoleEngine.Args
-    $args += @("-m", "py_compile", "`"$PayloadPath`"")
+    $args += @("-m", "py_compile", "`"$GuiPath`"")
 
     $output = & $consoleEngine.File @args 2>&1
 
     if ($LASTEXITCODE -ne 0) {
         $output | Out-File -LiteralPath $LogPath -Encoding UTF8 -Force
-        throw "Interface file has an error. Saved details to: $LogPath"
+        throw "GUI file has an error. Log saved to: $LogPath"
     }
 }
 
@@ -582,40 +524,34 @@ function Open-Interface {
     param($Runtime)
 
     Write-Status "Opening premium interface." Green
-    Show-PremiumBar -Label "Opening interface" -Start 90 -End 91 -Delay 50
+    Show-PremiumBar -Label "Opening interface" -Start 79 -End 89 -Delay 12
 
-    Test-PayloadCanCompile -Runtime $Runtime
+    Test-GuiCanCompile -Runtime $Runtime
 
     $windowed = Get-WindowedEngine -Runtime $Runtime
 
     $argList = @()
     $argList += $windowed.Args
-    $argList += @("`"$PayloadPath`"")
+    $argList += @("`"$GuiPath`"")
 
     $process = Start-Process -FilePath $windowed.File -ArgumentList $argList -WorkingDirectory $AppRoot -PassThru
 
-    Start-Sleep -Milliseconds 1500
+    Start-Sleep -Milliseconds 1000
 
     if ($process.HasExited) {
-        Write-Host ""
-        Write-Host "   [GODPROJEXTH DEBUG]" -ForegroundColor Yellow
-        Write-Host "   GUI closed immediately. Reopening with visible console to show the error..." -ForegroundColor Yellow
-        Write-Host ""
-
         $consoleEngine = Get-ConsoleEngine -Runtime $Runtime
 
         $debugArgs = @()
         $debugArgs += $consoleEngine.Args
-        $debugArgs += @("`"$PayloadPath`"")
+        $debugArgs += @("`"$GuiPath`"")
 
         Start-Process -FilePath $consoleEngine.File -ArgumentList $debugArgs -WorkingDirectory $AppRoot
-        Start-Sleep -Milliseconds 1200
-        throw "GUI could not stay open. Check the debug console or log file."
+        throw "GUI closed immediately. A debug console was opened."
     }
 }
 
 function Exit-Runner {
-    Start-Sleep -Milliseconds 700
+    Start-Sleep -Milliseconds 250
 
     try {
         [Console]::CursorVisible = $true
@@ -630,13 +566,20 @@ try {
     Initialize-Console
     Show-Header
 
+    Write-Status "Checking local interface." Green
+    Show-PremiumBar -Label "Checking premium local files" -Start 1 -End 30 -Delay 13
+
+    Ensure-LocalGuiExists
+
+    Write-Status "Local interface verified." Green
+    Show-PremiumBar -Label "Preparing premium engine" -Start 31 -End 60 -Delay 13
+
     $runtime = Find-Engine
 
     if ($null -eq $runtime) {
         throw "No compatible engine was found on this system."
     }
 
-    Download-Interface
     Ensure-Components -Runtime $runtime
     Show-EndCredits
     Open-Interface -Runtime $runtime
