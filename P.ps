@@ -1,450 +1,180 @@
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-$AppName = "GODPROJEXTH"
-$InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthLauncher"
-$PayloadPath = Join-Path $InstallDir "GODPROJEXTH_Interface"
+try {
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    [Console]::CursorVisible = $false
+    $Host.UI.RawUI.WindowTitle = "GODPROJEXTH PREMIUM RUNNER"
+} catch {}
 
-$RepoOwner = "Wxyuz"
-$RepoName = "GodprojexthLauncher"
-$AssetName = "Powershell.py"
-
-$RequiredModules = @(
-    @{ ImportName = "PySide6"; PackageName = "PySide6" },
-    @{ ImportName = "requests"; PackageName = "requests" },
-    @{ ImportName = "PIL"; PackageName = "Pillow" },
-    @{ ImportName = "psutil"; PackageName = "psutil" }
-)
-
-function Set-ConsoleLook {
-    try {
-        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-        [Console]::InputEncoding = [System.Text.Encoding]::UTF8
-        [Console]::CursorVisible = $false
-        [Console]::Title = "GODPROJEXTH PREMIUM RUNNER"
-    }
-    catch {
-    }
-}
-
-function Write-SlowText {
+function Write-Slow {
     param(
         [string]$Text,
-        [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-        [int]$Delay = 28
+        [ConsoleColor]$Color = [ConsoleColor]::Yellow,
+        [int]$Delay = 18,
+        [switch]$NoNewLine
     )
 
-    foreach ($char in $Text.ToCharArray()) {
-        Write-Host $char -NoNewline -ForegroundColor $Color
+    foreach ($c in $Text.ToCharArray()) {
+        Write-Host $c -NoNewline -ForegroundColor $Color
         Start-Sleep -Milliseconds $Delay
     }
 
-    Write-Host ""
+    if (-not $NoNewLine) {
+        Write-Host ""
+    }
 }
 
-function Write-GodStatus {
+function Write-At {
     param(
+        [int]$X,
+        [int]$Y,
         [string]$Text,
-        [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-        [int]$Delay = 14
+        [ConsoleColor]$Color = [ConsoleColor]::Yellow
     )
-
-    Write-Host "   " -NoNewline
-    Write-SlowText "[GODPROJEXTH] $Text" $Color $Delay
+    try {
+        $Host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates($X, $Y)
+        Write-Host $Text -ForegroundColor $Color -NoNewline
+    } catch {}
 }
 
-function Show-GodHeader {
-    Clear-Host
-    Write-Host ""
+function Clear-Line {
+    param([int]$Y)
+    try {
+        $w = $Host.UI.RawUI.WindowSize.Width
+        $Host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates(0, $Y)
+        Write-Host (" " * ($w - 1)) -NoNewline
+        $Host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates(0, $Y)
+    } catch {}
+}
 
-    $logo = @(
-"     _______   ______   _______   _______   _______    ______     __  ________ __    __",
-"    /       | /      \ /       \ /       \ /       \  /      \   /  |/        |/  |  /  |",
-"    $$$$$$$/ /$$$$$$  |$$$$$$$  |$$$$$$$  |$$$$$$$  |/$$$$$$  |  $$ |$$$$$$$$/ $$ |  $$ |",
-"    $$ |__   $$ |  $$ |$$ |  $$ |$$ |__$$ |$$ |__$$ |$$ |  $$ |  $$ |$$ |__    $$ |__$$ |",
-"    $$    |  $$ |  $$ |$$ |  $$ |$$    $$/ $$    $$/ $$ |  $$ |  $$ |$$    |   $$    $$ |",
-"    $$$$$/   $$ |  $$ |$$ |  $$ |$$$$$$$/  $$$$$$$/  $$ |  $$ |  $$ |$$$$$/    $$$$$$$$ |",
-"    $$ |     $$ \__$$ |$$ |__$$ |$$ |      $$ |      $$ \__$$ |__$$ |$$ |_____ $$ |  $$ |",
-"    $$ |     $$    $$/ $$    $$/ $$ |      $$ |      $$    $$/ $$ $$/ $$       |$$ |  $$ |",
-"    $$/       $$$$$$/  $$$$$$$/  $$/       $$/        $$$$$$/   $$$/  $$$$$$$$/ $$/   $$/"
+function Show-Header {
+    Clear-Host
+
+    $art = @(
+"      █████  ██      ██████  ██   ██  █████ ",
+"     ██   ██ ██      ██   ██ ██   ██ ██   ██",
+"     ███████ ██      ██████  ███████ ███████",
+"     ██   ██ ██      ██      ██   ██ ██   ██",
+"     ██   ██ ███████ ██      ██   ██ ██   ██",
+"",
+"  ██████   ██████  ██████  ██████  ██████   ██████       ██ ███████ ██   ██ ████████ ██   ██",
+" ██       ██    ██ ██   ██ ██   ██ ██   ██ ██    ██      ██ ██       ██ ██     ██    ██   ██",
+" ██   ███ ██    ██ ██   ██ ██████  ██████  ██    ██      ██ █████     ███      ██    ███████",
+" ██    ██ ██    ██ ██   ██ ██      ██   ██ ██    ██ ██   ██ ██       ██ ██     ██    ██   ██",
+"  ██████   ██████  ██████  ██      ██   ██  ██████   █████  ███████ ██   ██    ██    ██   ██"
     )
 
-    foreach ($line in $logo) {
-        Write-Host $line -ForegroundColor Yellow
-        Start-Sleep -Milliseconds 45
+    foreach ($line in $art) {
+        Write-Slow $line Yellow 2
     }
 
     Write-Host ""
-    Write-SlowText "   GODPROJEXTH PREMIUM RUNNER" Yellow 35
-    Write-SlowText "   Secure Connect  ->  Premium Load  ->  Open Interface" DarkYellow 20
+    Write-Slow "   PREMIUM INTERFACE READY..." Yellow 14
     Write-Host ""
 }
 
-function Show-PremiumLoader {
+function Show-FancyProgress {
     param(
-        [string]$Text,
+        [string]$Label,
         [int]$From,
         [int]$To,
-        [int]$Delay = 26
+        [int]$Delay = 25
     )
 
-    $barWidth = 46
-
+    $barWidth = 36
     for ($i = $From; $i -le $To; $i++) {
-        $filled = [Math]::Floor(($i / 100) * $barWidth)
-        $empty = $barWidth - $filled
+        $filled = [math]::Floor(($i / 100) * $barWidth)
+        $empty  = $barWidth - $filled
 
-        $bar = ("#" * $filled) + ("-" * $empty)
-        $spark = @("*", "+", "x", "+")[$i % 4]
+        $fillText = "■" * $filled
+        $emptyText = "·" * $empty
 
-        Write-Host "`r   $spark $Text [$bar] $i%" -NoNewline -ForegroundColor Yellow
+        $spinner = @("◜","◠","◝","◞","◡","◟")[$i % 6]
+        $line = ("{0}  [{1}{2}] {3,3}%%" -f $spinner, $fillText, $emptyText, $i)
+
+        Clear-Line 16
+        Write-At 3 16 ($Label + " ") Cyan
+        Write-Host $line -ForegroundColor Yellow
+
         Start-Sleep -Milliseconds $Delay
     }
-
-    Write-Host ""
 }
 
-function Show-AlphaCredit {
-    Clear-Host
-    Write-Host ""
-
-    $alpha = @(
-"        AAA       LL       PPPPPPP   HH     HH       AAA",
-"       AAAAA      LL       PP    PP  HH     HH      AAAAA",
-"      AA   AA     LL       PP    PP  HH     HH     AA   AA",
-"     AA     AA    LL       PPPPPPP   HHHHHHHHH    AA     AA",
-"     AAAAAAAAA    LL       PP        HH     HH     AAAAAAAAA",
-"     AA     AA    LL       PP        HH     HH     AA     AA",
-"     AA     AA    LLLLLLL  PP        HH     HH     AA     AA"
-    )
-
-    $god = @(
-"      GGGGGG    OOOOO   DDDDDD   PPPPPPP   RRRRRR    OOOOO       JJJJJ  EEEEEEE  XX    XX  TTTTTTT  HH     HH",
-"     GG        OO   OO  DD   DD  PP    PP  RR   RR   OO   OO        JJ   EE        XX  XX     TT     HH     HH",
-"     GG  GGG   OO   OO  DD   DD  PP    PP  RR   RR   OO   OO        JJ   EE         XXXX      TT     HH     HH",
-"     GG   GG   OO   OO  DD   DD  PPPPPPP   RRRRRR    OO   OO        JJ   EEEEE       XX       TT     HHHHHHHHH",
-"     GG   GG   OO   OO  DD   DD  PP        RR  RR    OO   OO   JJ   JJ   EE         XXXX      TT     HH     HH",
-"     GG   GG   OO   OO  DD   DD  PP        RR   RR   OO   OO   JJ   JJ   EE        XX  XX     TT     HH     HH",
-"      GGGGGG    OOOOO   DDDDDD   PP        RR    RR   OOOOO     JJJJJ    EEEEEEE  XX    XX    TT     HH     HH"
-    )
-
-    Write-SlowText "   INITIALIZING PREMIUM CREDIT..." Yellow 35
-    Start-Sleep -Milliseconds 250
-    Write-Host ""
-
-    foreach ($line in $alpha) {
-        Write-Host $line -ForegroundColor Yellow
-        Start-Sleep -Milliseconds 95
-    }
-
-    Write-Host ""
-    Start-Sleep -Milliseconds 200
-
-    foreach ($line in $god) {
-        Write-Host $line -ForegroundColor Yellow
-        Start-Sleep -Milliseconds 70
-    }
-
-    Write-Host ""
-    Write-SlowText "   ALPHA GODPROJEXTH" White 45
-    Write-SlowText "   PREMIUM INTERFACE READY..." Yellow 30
-
-    for ($i = 1; $i -le 24; $i++) {
-        $left = "." * $i
-        $right = "." * (24 - $i)
-        Write-Host "`r   [$left*$right] Launching" -NoNewline -ForegroundColor DarkYellow
-        Start-Sleep -Milliseconds 35
-    }
-
-    Write-Host ""
-    Start-Sleep -Milliseconds 600
+function Pause-Smooth {
+    param([int]$Milliseconds = 350)
+    Start-Sleep -Milliseconds $Milliseconds
 }
 
-function Ensure-Folder {
-    param([string]$Path)
-
-    if (-not (Test-Path -LiteralPath $Path)) {
-        New-Item -ItemType Directory -Path $Path -Force | Out-Null
-    }
-}
-
-function Get-LatestReleaseAssetUrl {
-    $apiUrl = "https://api.github.com/repos/$RepoOwner/$RepoName/releases/latest"
-
-    try {
-        $headers = @{
-            "User-Agent" = "GODPROJEXTH"
-            "Accept" = "application/vnd.github+json"
-        }
-
-        $release = Invoke-RestMethod -Uri $apiUrl -Headers $headers -Method Get
-
-        if ($null -eq $release) {
-            throw "Empty release response."
-        }
-
-        if ($null -eq $release.assets) {
-            throw "Release has no assets."
-        }
-
-        $asset = $release.assets | Where-Object { $_.name -eq $AssetName } | Select-Object -First 1
-
-        if ($null -eq $asset) {
-            throw "Target asset not found."
-        }
-
-        if ([string]::IsNullOrWhiteSpace($asset.browser_download_url)) {
-            throw "Asset download URL is empty."
-        }
-
-        return $asset.browser_download_url
-    }
-    catch {
-        throw "Cannot find release asset. Upload the interface file to GitHub Release Assets and click Update release."
-    }
-}
-
-function Find-PythonRuntime {
-    $candidates = New-Object System.Collections.ArrayList
-
-    $searchRoots = @(
-        "$env:LOCALAPPDATA\Programs\Python",
-        "$env:LOCALAPPDATA\Python"
-    )
-
-    foreach ($root in $searchRoots) {
-        try {
-            if (Test-Path -LiteralPath $root) {
-                $localPython = Get-ChildItem -Path $root -Filter "python.exe" -Recurse -ErrorAction SilentlyContinue |
-                    Sort-Object FullName -Descending |
-                    Select-Object -First 1
-
-                if ($localPython) {
-                    [void]$candidates.Add(@{
-                        File = $localPython.FullName
-                        Args = @()
-                    })
-                }
-            }
-        }
-        catch {
-        }
-    }
-
-    $py = Get-Command "py.exe" -ErrorAction SilentlyContinue
-    if ($py -and ($py.Source -notlike "*\WindowsApps\*")) {
-        [void]$candidates.Add(@{
-            File = $py.Source
-            Args = @("-3")
-        })
-    }
-
-    $python = Get-Command "python.exe" -ErrorAction SilentlyContinue
-    if ($python -and ($python.Source -notlike "*\WindowsApps\*")) {
-        [void]$candidates.Add(@{
-            File = $python.Source
-            Args = @()
-        })
-    }
-
-    foreach ($candidate in $candidates) {
-        try {
-            $checkArgs = @()
-            $checkArgs += $candidate.Args
-            $checkArgs += @("-c", "import sys; print(sys.version_info.major)")
-
-            $output = & $candidate.File @checkArgs 2>$null
-
-            if ($LASTEXITCODE -eq 0 -and (($output -join "").Trim() -eq "3")) {
-                return $candidate
-            }
-        }
-        catch {
-        }
-    }
-
-    return $null
-}
-
-function Get-WindowedRuntime {
-    param($Runtime)
-
-    try {
-        if ((Split-Path -Leaf $Runtime.File).ToLower() -eq "python.exe") {
-            $dir = Split-Path -Parent $Runtime.File
-            $pythonw = Join-Path $dir "pythonw.exe"
-
-            if (Test-Path -LiteralPath $pythonw) {
-                return @{
-                    File = $pythonw
-                    Args = @()
-                }
-            }
-        }
-
-        $pyw = Get-Command "pyw.exe" -ErrorAction SilentlyContinue
-
-        if ($pyw -and ($pyw.Source -notlike "*\WindowsApps\*")) {
-            return @{
-                File = $pyw.Source
-                Args = @("-3")
-            }
-        }
-    }
-    catch {
-    }
-
-    return $Runtime
-}
-
-function Download-Payload {
-    Ensure-Folder -Path $InstallDir
-
-    Write-GodStatus "Connecting to premium server..." Yellow 22
-    Show-PremiumLoader -Text "Secure connect        " -From 1 -To 20 -Delay 34
-
-    $downloadUrl = Get-LatestReleaseAssetUrl
-
-    Write-GodStatus "Connection authenticated." Green 18
-    Show-PremiumLoader -Text "Preparing data        " -From 21 -To 40 -Delay 30
-
-    try {
-        Invoke-WebRequest -Uri $downloadUrl -OutFile $PayloadPath -UseBasicParsing
-    }
-    catch {
-        throw "Download failed. Check GitHub Release asset and click Update release."
-    }
-
-    Show-PremiumLoader -Text "Loading interface     " -From 41 -To 60 -Delay 28
-
-    if (-not (Test-Path -LiteralPath $PayloadPath)) {
-        throw "Download finished but payload was not found."
-    }
-
-    $fileSize = (Get-Item -LiteralPath $PayloadPath).Length
-
-    if ($fileSize -lt 100) {
-        Remove-Item -LiteralPath $PayloadPath -Force -ErrorAction SilentlyContinue
-        throw "Downloaded payload is too small. Release asset may be incorrect."
-    }
-}
-
-function Test-PythonModule {
+function Show-Step {
     param(
-        $Runtime,
-        [string]$ImportName
+        [string]$Text,
+        [ConsoleColor]$Color = [ConsoleColor]::Green
     )
-
-    try {
-        $args = @()
-        $args += $Runtime.Args
-        $args += @("-c", "import $ImportName; print('OK')")
-
-        $output = & $Runtime.File @args 2>$null
-
-        if ($LASTEXITCODE -eq 0 -and (($output -join "").Trim() -eq "OK")) {
-            return $true
-        }
-    }
-    catch {
-    }
-
-    return $false
+    Write-Slow ("   [GODPROJEXTH] " + $Text) $Color 16
 }
 
-function Install-PythonPackage {
-    param(
-        $Runtime,
-        [string]$PackageName
-    )
+function Pick-And-OpenLocalFile {
+    Add-Type -AssemblyName System.Windows.Forms
 
-    $args = @()
-    $args += $Runtime.Args
-    $args += @("-m", "pip", "install", "--user", "--upgrade", $PackageName)
+    $dialog = New-Object System.Windows.Forms.OpenFileDialog
+    $dialog.Title = "Select a file to open"
+    $dialog.Filter = "Executable or Python|*.exe;*.py|All files|*.*"
+    $dialog.Multiselect = $false
 
-    & $Runtime.File @args
+    $result = $dialog.ShowDialog()
 
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to install package: $PackageName"
-    }
-}
-
-function Install-GuiDependencies {
-    param($Runtime)
-
-    Write-GodStatus "Checking premium engine..." Yellow 20
-    Show-PremiumLoader -Text "Checking engine       " -From 61 -To 76 -Delay 26
-
-    foreach ($module in $RequiredModules) {
-        $importName = $module.ImportName
-        $packageName = $module.PackageName
-
-        if (Test-PythonModule -Runtime $Runtime -ImportName $importName) {
-            continue
-        }
-
-        Write-GodStatus "Installing engine component..." Yellow 10
-        Install-PythonPackage -Runtime $Runtime -PackageName $packageName
-    }
-}
-
-function Start-Interface {
-    param($Runtime)
-
-    Write-GodStatus "Opening premium interface..." Yellow 22
-    Show-PremiumLoader -Text "Opening interface     " -From 77 -To 100 -Delay 24
-
-    $windowed = Get-WindowedRuntime -Runtime $Runtime
-
-    $args = @()
-    $args += $windowed.Args
-    $args += @("`"$PayloadPath`"")
-
-    Start-Process -FilePath $windowed.File -ArgumentList $args -WorkingDirectory $InstallDir
-}
-
-function Close-RunnerWindow {
-    Start-Sleep -Milliseconds 700
-
-    try {
-        [Console]::CursorVisible = $true
-    }
-    catch {
+    if ($result -ne [System.Windows.Forms.DialogResult]::OK) {
+        Write-Host ""
+        Write-Slow "   No file selected. Closing..." Yellow 16
+        Start-Sleep -Milliseconds 700
+        return
     }
 
-    Stop-Process -Id $PID -Force
-}
-
-try {
-    Set-ConsoleLook
-    Show-GodHeader
-
-    $runtime = Find-PythonRuntime
-
-    if ($null -eq $runtime) {
-        throw "Python 3 not found. Install Python 3 first. Avoid Microsoft Store alias."
-    }
-
-    Write-GodStatus "Premium engine found." Green 20
-
-    Download-Payload
-    Install-GuiDependencies -Runtime $runtime
-    Show-AlphaCredit
-    Start-Interface -Runtime $runtime
-
-    Close-RunnerWindow
-}
-catch {
-    try {
-        [Console]::CursorVisible = $true
-    }
-    catch {
-    }
+    $selected = $dialog.FileName
+    $ext = [System.IO.Path]::GetExtension($selected).ToLowerInvariant()
 
     Write-Host ""
-    Write-Host "   [GODPROJEXTH ERROR]" -ForegroundColor Red
-    Write-Host "   $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host ""
-    Write-Host "   Press Enter to close..." -ForegroundColor Yellow
-    [void][System.Console]::ReadLine()
+    Show-Step "Selected: $([System.IO.Path]::GetFileName($selected))"
+
+    if ($ext -eq ".exe") {
+        Show-Step "Launching local EXE..."
+        Start-Process -FilePath $selected
+    }
+    elseif ($ext -eq ".py") {
+        $python = Get-Command python -ErrorAction SilentlyContinue
+        if (-not $python) {
+            throw "Python was not found in PATH."
+        }
+        Show-Step "Launching local Python script..."
+        Start-Process -FilePath $python.Source -ArgumentList "`"$selected`""
+    }
+    else {
+        Start-Process -FilePath $selected
+    }
 }
+
+Show-Header
+
+Write-Slow "   Starting premium session..." Yellow 14
+Pause-Smooth 250
+Show-Step "Initializing visual engine..."
+Show-FancyProgress "Loading core" 1 20 22
+
+Show-Step "Preparing interface..."
+Show-FancyProgress "Preparing UI" 21 45 22
+
+Show-Step "Validating local environment..."
+Show-FancyProgress "Checking system" 46 72 20
+
+Show-Step "Finalizing..."
+Show-FancyProgress "Opening session" 73 100 18
+
+Write-Host ""
+Write-Slow "   ALPHA GODPROJEXTH" White 28
+Write-Slow "   Premium session initialized successfully." Yellow 14
+Write-Host ""
+
+Pick-And-OpenLocalFile
+
+try { [Console]::CursorVisible = $true } catch {}
