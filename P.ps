@@ -31,7 +31,7 @@ function Write-TypeText {
     param(
         [string]$Text,
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-        [int]$Delay = 12
+        [int]$Delay = 28
     )
 
     foreach ($char in $Text.ToCharArray()) {
@@ -42,13 +42,15 @@ function Write-TypeText {
     Write-Host ""
 }
 
-function Write-Status {
+function Write-StatusTyped {
     param(
         [string]$Text,
-        [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow
+        [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
+        [int]$Delay = 18
     )
 
-    Write-Host "   [GODPROJEXTH] $Text" -ForegroundColor $Color
+    Write-Host "   " -NoNewline
+    Write-TypeText "[GODPROJEXTH] $Text" $Color $Delay
 }
 
 function Show-Header {
@@ -66,12 +68,12 @@ function Show-Header {
 
     foreach ($line in $logo) {
         Write-Host $line -ForegroundColor Yellow
-        Start-Sleep -Milliseconds 45
+        Start-Sleep -Milliseconds 60
     }
 
     Write-Host ""
-    Write-TypeText "   GODPROJEXTH PREMIUM RUNNER" Yellow 16
-    Write-TypeText "   PowerShell  ->  Secure Download  ->  Check Engine  ->  Open Interface" DarkYellow 8
+    Write-TypeText "   GODPROJEXTH PREMIUM RUNNER" Yellow 35
+    Write-TypeText "   PowerShell  ->  Secure Connect  ->  Premium Load  ->  Open Interface" DarkYellow 18
     Write-Host ""
 }
 
@@ -79,7 +81,8 @@ function Show-Loader {
     param(
         [string]$Text,
         [int]$From,
-        [int]$To
+        [int]$To,
+        [int]$Delay = 24
     )
 
     $barWidth = 44
@@ -91,7 +94,7 @@ function Show-Loader {
         $bar = ("█" * $filled) + ("░" * $empty)
 
         Write-Host "`r   $Text [$bar] $i%" -NoNewline -ForegroundColor Yellow
-        Start-Sleep -Milliseconds 13
+        Start-Sleep -Milliseconds $Delay
     }
 
     Write-Host ""
@@ -137,7 +140,7 @@ function Get-LatestReleaseAssetUrl {
         return $asset.browser_download_url
     }
     catch {
-        throw "Cannot find the release asset. Open GitHub Release, make sure the asset is uploaded, then click Update release."
+        throw "Cannot find release asset. Make sure the file is uploaded in GitHub Release Assets and click Update release."
     }
 }
 
@@ -242,11 +245,13 @@ function Get-WindowedRuntime {
 function Download-Payload {
     Ensure-Folder -Path $InstallDir
 
-    Show-Loader -Text "Checking secure link     " -From 1 -To 18
+    Write-StatusTyped "Connecting to premium server..." Yellow 22
+    Show-Loader -Text "Secure connecting        " -From 1 -To 18 -Delay 28
 
     $downloadUrl = Get-LatestReleaseAssetUrl
 
-    Show-Loader -Text "Connecting to release    " -From 19 -To 32
+    Write-StatusTyped "Server authenticated." Green 18
+    Show-Loader -Text "Preparing interface      " -From 19 -To 32 -Delay 26
 
     try {
         Invoke-WebRequest -Uri $downloadUrl -OutFile $PayloadPath -UseBasicParsing
@@ -255,7 +260,7 @@ function Download-Payload {
         throw "Download failed. Check GitHub Release asset and click Update release."
     }
 
-    Show-Loader -Text "Downloading interface    " -From 33 -To 55
+    Show-Loader -Text "Loading premium data     " -From 33 -To 55 -Delay 24
 
     if (-not (Test-Path -LiteralPath $PayloadPath)) {
         throw "Download finished but payload was not found."
@@ -312,18 +317,19 @@ function Install-PythonPackage {
 function Install-GuiDependencies {
     param($Runtime)
 
-    Show-Loader -Text "Checking dependencies    " -From 56 -To 70
+    Write-StatusTyped "Checking premium engine..." Yellow 20
+    Show-Loader -Text "Checking engine          " -From 56 -To 70 -Delay 24
 
     foreach ($module in $RequiredModules) {
         $importName = $module.ImportName
         $packageName = $module.PackageName
 
         if (Test-PythonModule -Runtime $Runtime -ImportName $importName) {
-            Write-Status "$packageName already installed." Green
+            Write-StatusTyped "$packageName ready." Green 10
             continue
         }
 
-        Write-Status "Installing $packageName..."
+        Write-StatusTyped "Installing $packageName..." Yellow 10
         Install-PythonPackage -Runtime $Runtime -PackageName $packageName
     }
 }
@@ -331,7 +337,8 @@ function Install-GuiDependencies {
 function Start-Interface {
     param($Runtime)
 
-    Show-Loader -Text "Opening interface        " -From 71 -To 100
+    Write-StatusTyped "Opening interface..." Yellow 24
+    Show-Loader -Text "Opening interface        " -From 71 -To 100 -Delay 22
 
     $windowed = Get-WindowedRuntime -Runtime $Runtime
 
@@ -352,14 +359,17 @@ try {
         throw "Python 3 not found. Install Python 3 first. Avoid Microsoft Store alias."
     }
 
-    Write-Status "Python engine found: $($runtime.File)" Green
+    Write-StatusTyped "Premium engine found." Green 20
 
     Download-Payload
     Install-GuiDependencies -Runtime $runtime
     Start-Interface -Runtime $runtime
 
     Write-Host ""
-    Write-Status "Done." Green
+    Write-StatusTyped "Successfully launched." Green 22
+
+    Start-Sleep -Milliseconds 900
+    exit 0
 }
 catch {
     try {
