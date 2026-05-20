@@ -1,13 +1,17 @@
 $ErrorActionPreference = "Stop"
-$ProgressPreference    = "SilentlyContinue"
+$ProgressPreference = "SilentlyContinue"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$RepoOwner       = "Wxyuz"
-$RepoName        = "GodprojexthLauncher"
+$RepoOwner = "Wxyuz"
+$RepoName = "GodprojexthLauncher"
 $PayloadFileName = "Powershell.py"
 
-$AppRoot         = Join-Path $env:LOCALAPPDATA "GodprojexthPremium"
-$PayloadPath     = Join-Path $AppRoot "premium_interface.dat"
+$AppRoot = Join-Path $env:LOCALAPPDATA "GodprojexthPremium"
+$PayloadPath = Join-Path $AppRoot "GODPROJEXTH_Interface.cache"
+
+# ใส่ SHA256 ของไฟล์ Powershell.py ตรงนี้เพื่อกันไฟล์โดนแก้หรือโดนสลับ
+# ปล่อยว่างได้ แต่แนะนำให้ใส่ถ้าจะใช้งานจริง
+$ExpectedPayloadSha256 = ""
 
 $RequiredModules = @(
     @{ ImportName = "PySide6"; PackageName = "PySide6" },
@@ -19,13 +23,17 @@ $RequiredModules = @(
 function Initialize-Console {
     try {
         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-        [Console]::InputEncoding  = [System.Text.Encoding]::UTF8
-        [Console]::CursorVisible  = $false
-    } catch {}
+        [Console]::InputEncoding = [System.Text.Encoding]::UTF8
+        [Console]::CursorVisible = $false
+    }
+    catch {
+    }
 
     try {
         $Host.UI.RawUI.WindowTitle = "GODPROJEXTH PREMIUM RUNNER"
-    } catch {}
+    }
+    catch {
+    }
 
     Clear-Host
 }
@@ -33,13 +41,13 @@ function Initialize-Console {
 function Write-Typed {
     param(
         [Parameter(Mandatory = $true)][string]$Text,
-        [ConsoleColor]$Color = [ConsoleColor]::Yellow,
-        [int]$Delay = 12,
+        [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
+        [int]$Delay = 16,
         [switch]$NoNewLine
     )
 
-    foreach ($ch in $Text.ToCharArray()) {
-        Write-Host $ch -NoNewline -ForegroundColor $Color
+    foreach ($char in $Text.ToCharArray()) {
+        Write-Host $char -NoNewline -ForegroundColor $Color
         Start-Sleep -Milliseconds $Delay
     }
 
@@ -51,8 +59,8 @@ function Write-Typed {
 function Write-TypedLine {
     param(
         [string]$Text,
-        [ConsoleColor]$Color = [ConsoleColor]::Yellow,
-        [int]$Delay = 10
+        [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
+        [int]$Delay = 14
     )
 
     Write-Host "   " -NoNewline
@@ -62,53 +70,70 @@ function Write-TypedLine {
 function Write-Status {
     param(
         [string]$Text,
-        [ConsoleColor]$Color = [ConsoleColor]::Green,
-        [int]$Delay = 8
+        [System.ConsoleColor]$Color = [System.ConsoleColor]::Green,
+        [int]$Delay = 10
     )
 
     Write-Host "   " -NoNewline
     Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
 }
 
-function Show-GodprojexthBanner {
-    $lines = @(
-        "   ██████╗   ██████╗  ██████╗  ██████╗  ██████╗   ██████╗      ██╗███████╗██╗  ██╗████████╗██╗  ██╗",
-        "  ██╔════╝  ██╔═══██╗██╔══██╗██╔══██╗██╔══██╗ ██╔═══██╗     ██║██╔════╝╚██╗██╔╝╚══██╔══╝██║  ██║",
-        "  ██║  ███╗ ██║   ██║██║  ██║██████╔╝██████╔╝ ██║   ██║     ██║█████╗   ╚███╔╝    ██║   ███████║",
-        "  ██║   ██║ ██║   ██║██║  ██║██╔═══╝ ██╔══██╗ ██║   ██║██   ██║██╔══╝   ██╔██╗    ██║   ██╔══██║",
-        "  ╚██████╔╝ ╚██████╔╝██████╔╝██║     ██║  ██║ ╚██████╔╝╚█████╔╝███████╗██╔╝ ██╗   ██║   ██║  ██║",
-        "   ╚═════╝   ╚═════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝  ╚═════╝  ╚════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝"
+function Write-ArtLine {
+    param(
+        [string]$Text,
+        [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
+        [int]$Delay = 2
     )
 
-    foreach ($line in $lines) {
-        Write-Host $line -ForegroundColor Yellow
-        Start-Sleep -Milliseconds 28
+    foreach ($char in $Text.ToCharArray()) {
+        Write-Host $char -NoNewline -ForegroundColor $Color
+        Start-Sleep -Milliseconds $Delay
+    }
+
+    Write-Host ""
+}
+
+function Show-GodprojexthArt {
+    $art = @(
+"      ╭────────────────────────────────────────────────────────────╮",
+"      │   ╔═╗  ╔═╗  ╔═╗  ╔═╗  ╦═╗  ╔═╗     ╦  ╔═╗  ═╦═  ╦ ╦       │",
+"      │   ║ ╦  ║ ║  ║ ║  ╠═╝  ╠╦╝  ║ ║     ║  ║╣    ║   ╠═╣       │",
+"      │   ╚═╝  ╚═╝  ╚═╝  ╩    ╩╚═  ╚═╝    ╚╝  ╚═╝   ╩   ╩ ╩       │",
+"      ╰────────────────────────────────────────────────────────────╯"
+    )
+
+    foreach ($line in $art) {
+        Write-ArtLine $line Yellow 2
+        Start-Sleep -Milliseconds 45
     }
 }
 
-function Show-AlphaGodprojexthBanner {
-    $lines = @(
-        "    █████╗ ██╗     ██████╗ ██╗  ██╗ █████╗      ██████╗  ██████╗ ██████╗ ██████╗ ██████╗  ██████╗      ██╗███████╗██╗  ██╗████████╗██╗  ██╗",
-        "   ██╔══██╗██║     ██╔══██╗██║  ██║██╔══██╗    ██╔════╝ ██╔═══██╗██╔══██╗██╔══██╗██╔══██╗██╔═══██╗     ██║██╔════╝╚██╗██╔╝╚══██╔══╝██║  ██║",
-        "   ███████║██║     ██████╔╝███████║███████║    ██║  ███╗██║   ██║██║  ██║██████╔╝██████╔╝██║   ██║     ██║█████╗   ╚███╔╝    ██║   ███████║",
-        "   ██╔══██║██║     ██╔═══╝ ██╔══██║██╔══██║    ██║   ██║██║   ██║██║  ██║██╔═══╝ ██╔══██╗██║   ██║██   ██║██╔══╝   ██╔██╗    ██║   ██╔══██║",
-        "   ██║  ██║███████╗██║     ██║  ██║██║  ██║    ╚██████╔╝╚██████╔╝██████╔╝██║     ██║  ██║╚██████╔╝╚█████╔╝███████╗██╔╝ ██╗   ██║   ██║  ██║",
-        "   ╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝     ╚═════╝  ╚═════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝ ╚═════╝  ╚════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝"
+function Show-AlphaGodprojexthArt {
+    $art = @(
+"      ╭────────────────────────────────────────────────────────────────────────────╮",
+"      │  ╔═╗  ╦    ╔═╗  ╦ ╦  ╔═╗      ╔═╗  ╔═╗  ╔═╗  ╔═╗  ╦═╗  ╔═╗               │",
+"      │  ╠═╣  ║    ╠═╝  ╠═╣  ╠═╣      ║ ╦  ║ ║  ║ ║  ╠═╝  ╠╦╝  ║ ║               │",
+"      │  ╩ ╩  ╩═╝  ╩    ╩ ╩  ╩ ╩      ╚═╝  ╚═╝  ╚═╝  ╩    ╩╚═  ╚═╝               │",
+"      │                                                                            │",
+"      │                         ╦  ╔═╗  ═╦═  ╦ ╦                                  │",
+"      │                         ║  ║╣    ║   ╠═╣                                  │",
+"      │                        ╚╝  ╚═╝   ╩   ╩ ╩                                  │",
+"      ╰────────────────────────────────────────────────────────────────────────────╯"
     )
 
-    foreach ($line in $lines) {
-        Write-Host $line -ForegroundColor Yellow
-        Start-Sleep -Milliseconds 18
+    foreach ($line in $art) {
+        Write-ArtLine $line Yellow 2
+        Start-Sleep -Milliseconds 50
     }
 }
 
 function Show-Header {
     Clear-Host
     Write-Host ""
-    Show-GodprojexthBanner
+    Show-GodprojexthArt
     Write-Host ""
-    Write-TypedLine "GODPROJEXTH PREMIUM RUNNER" Yellow 10
-    Write-TypedLine "Secure Load  ->  Premium Connect  ->  Open Interface" DarkYellow 8
+    Write-TypedLine "GODPROJEXTH PREMIUM RUNNER" Yellow 22
+    Write-TypedLine "Secure Load  ->  Premium Connect  ->  Open Interface" DarkYellow 16
     Write-Host ""
 }
 
@@ -117,35 +142,52 @@ function Show-PremiumBar {
         [Parameter(Mandatory = $true)][string]$Label,
         [int]$Start = 0,
         [int]$End = 100,
-        [int]$Delay = 24
+        [int]$Delay = 26
     )
 
     $barWidth = 44
-    $frames = @("◜","◠","◝","◞","◡","◟")
+    $frames = @("◜", "◠", "◝", "◞", "◡", "◟")
+    $pulse = @("◇", "◆", "✦", "◆")
 
     Write-Host "   " -NoNewline
-    Write-Typed $Label Yellow 8
+    Write-Typed $Label Yellow 12
 
     for ($i = $Start; $i -le $End; $i++) {
         $filled = [math]::Floor(($i / 100) * $barWidth)
-        if ($filled -lt 0) { $filled = 0 }
-        if ($filled -gt $barWidth) { $filled = $barWidth }
+
+        if ($filled -lt 0) {
+            $filled = 0
+        }
+
+        if ($filled -gt $barWidth) {
+            $filled = $barWidth
+        }
 
         $empty = $barWidth - $filled
         $spin = $frames[$i % $frames.Count]
+        $spark = $pulse[$i % $pulse.Count]
 
-        $left  = "▐"
-        $right = "▌"
-        $fillText = ("█" * $filled)
-        $emptyText = ("·" * $empty)
+        $fillText = "█" * $filled
+        $emptyText = "░" * $empty
+
+        $state = "CONNECTING"
+        if ($i -ge 35 -and $i -lt 70) {
+            $state = "LOADING"
+        }
+        elseif ($i -ge 70) {
+            $state = "FINALIZING"
+        }
 
         Write-Host "`r   " -NoNewline
         Write-Host "$spin " -NoNewline -ForegroundColor White
-        Write-Host $left -NoNewline -ForegroundColor DarkYellow
+        Write-Host "╞" -NoNewline -ForegroundColor DarkYellow
         Write-Host $fillText -NoNewline -ForegroundColor Yellow
         Write-Host $emptyText -NoNewline -ForegroundColor DarkGray
-        Write-Host $right -NoNewline -ForegroundColor DarkYellow
-        Write-Host ("  {0,3}%%" -f $i) -NoNewline -ForegroundColor White
+        Write-Host "╡ " -NoNewline -ForegroundColor DarkYellow
+        Write-Host ("{0,3}%" -f $i) -NoNewline -ForegroundColor White
+        Write-Host "  " -NoNewline
+        Write-Host $spark -NoNewline -ForegroundColor Yellow
+        Write-Host " $state" -NoNewline -ForegroundColor DarkYellow
 
         Start-Sleep -Milliseconds $Delay
     }
@@ -154,20 +196,34 @@ function Show-PremiumBar {
     Write-Host ""
 }
 
+function Show-CreditLine {
+    param(
+        [string]$Name,
+        [string]$Value
+    )
+
+    Write-Host "      │  " -NoNewline -ForegroundColor DarkYellow
+    Write-Typed ($Name.PadRight(8) + " : ") DarkYellow 12 -NoNewLine
+    Write-Typed $Value Yellow 16
+}
+
 function Show-EndCredits {
     Clear-Host
     Write-Host ""
-    Show-AlphaGodprojexthBanner
-    Write-Host ""
-    Write-TypedLine "PREMIUM INTERFACE READY..." DarkYellow 12
+    Show-AlphaGodprojexthArt
     Write-Host ""
 
-    Show-PremiumBar -Label "Finalizing premium interface" -Start 92 -End 100 -Delay 45
+    Write-TypedLine "PREMIUM INTERFACE READY..." Yellow 20
+    Write-Host ""
 
-    Write-TypedLine "WEBSITE : GODPROJEXTH" Yellow 12
-    Write-TypedLine "YOUTUBE : GODPROJEXTH" Yellow 12
-    Write-TypedLine "TIKTOK  : GODPROJEXTH" Yellow 12
-    Write-TypedLine "DISCORD : GODPROJEXTH" Yellow 12
+    Show-PremiumBar -Label "Finalizing premium interface" -Start 90 -End 100 -Delay 42
+
+    Write-Host "      ╭────────────────────────────────────────────╮" -ForegroundColor DarkYellow
+    Show-CreditLine "WEBSITE" "GODPROJEXTH"
+    Show-CreditLine "YOUTUBE" "GODPROJEXTH"
+    Show-CreditLine "TIKTOK" "GODPROJEXTH"
+    Show-CreditLine "DISCORD" "GODPROJEXTH"
+    Write-Host "      ╰────────────────────────────────────────────╯" -ForegroundColor DarkYellow
     Write-Host ""
 
     Start-Sleep -Milliseconds 900
@@ -184,12 +240,12 @@ function Ensure-Folder {
 function Find-Engine {
     $candidates = New-Object System.Collections.ArrayList
 
-    $roots = @(
+    $searchRoots = @(
         "$env:LOCALAPPDATA\Programs\Python",
         "$env:LOCALAPPDATA\Python"
     )
 
-    foreach ($root in $roots) {
+    foreach ($root in $searchRoots) {
         try {
             if (Test-Path -LiteralPath $root) {
                 $found = Get-ChildItem -Path $root -Filter "python.exe" -Recurse -ErrorAction SilentlyContinue |
@@ -203,7 +259,9 @@ function Find-Engine {
                     })
                 }
             }
-        } catch {}
+        }
+        catch {
+        }
     }
 
     $pyLauncher = Get-Command "py.exe" -ErrorAction SilentlyContinue
@@ -227,12 +285,15 @@ function Find-Engine {
             $args = @()
             $args += $candidate.Args
             $args += @("-c", "import sys; print(sys.version_info.major)")
+
             $result = & $candidate.File @args 2>$null
 
             if ($LASTEXITCODE -eq 0 -and (($result -join "").Trim() -eq "3")) {
                 return $candidate
             }
-        } catch {}
+        }
+        catch {
+        }
     }
 
     return $null
@@ -245,6 +306,7 @@ function Get-WindowedEngine {
         if ((Split-Path -Leaf $Runtime.File).ToLower() -eq "python.exe") {
             $folder = Split-Path -Parent $Runtime.File
             $pythonw = Join-Path $folder "pythonw.exe"
+
             if (Test-Path -LiteralPath $pythonw) {
                 return @{
                     File = $pythonw
@@ -260,7 +322,9 @@ function Get-WindowedEngine {
                 Args = @("-3")
             }
         }
-    } catch {}
+    }
+    catch {
+    }
 
     return $Runtime
 }
@@ -271,43 +335,68 @@ function Get-PayloadUrl {
     try {
         $headers = @{
             "User-Agent" = "GODPROJEXTH"
-            "Accept"     = "application/vnd.github+json"
+            "Accept" = "application/vnd.github+json"
         }
 
         $release = Invoke-RestMethod -Uri $releaseApi -Headers $headers -Method Get
+
         if ($null -ne $release -and $null -ne $release.assets) {
             $asset = $release.assets | Where-Object { $_.name -eq $PayloadFileName } | Select-Object -First 1
+
             if ($asset -and -not [string]::IsNullOrWhiteSpace($asset.browser_download_url)) {
                 return $asset.browser_download_url
             }
         }
-    } catch {}
+    }
+    catch {
+    }
 
     $rawUrl = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/main/$PayloadFileName"
 
     try {
         $null = Invoke-WebRequest -Uri $rawUrl -Method Head -UseBasicParsing
         return $rawUrl
-    } catch {}
+    }
+    catch {
+    }
 
-    throw "Cannot find the interface package. Upload Powershell.py to Latest Release asset or commit it to main."
+    throw "Cannot find interface package. Upload the file to Latest Release asset or commit it to main."
+}
+
+function Verify-PayloadHash {
+    if ([string]::IsNullOrWhiteSpace($ExpectedPayloadSha256)) {
+        return
+    }
+
+    $actual = (Get-FileHash -Algorithm SHA256 -Path $PayloadPath).Hash.ToUpperInvariant()
+    $expected = $ExpectedPayloadSha256.ToUpperInvariant()
+
+    if ($actual -ne $expected) {
+        Remove-Item -LiteralPath $PayloadPath -Force -ErrorAction SilentlyContinue
+        throw "Payload integrity check failed."
+    }
 }
 
 function Download-Interface {
     Ensure-Folder -Path $AppRoot
 
     Write-Status "Engine ready." Green
-    Show-PremiumBar -Label "Checking secure link" -Start 1 -End 18 -Delay 40
+    Show-PremiumBar -Label "Checking secure channel" -Start 1 -End 18 -Delay 40
 
     $payloadUrl = Get-PayloadUrl
 
     Write-Status "Premium source verified." Green
-    Show-PremiumBar -Label "Connecting to release" -Start 19 -End 37 -Delay 36
+    Show-PremiumBar -Label "Connecting to protected source" -Start 19 -End 36 -Delay 36
 
     Write-Status "Protected package confirmed." Green
-    Show-PremiumBar -Label "Downloading premium interface" -Start 38 -End 64 -Delay 30
+    Show-PremiumBar -Label "Downloading premium interface" -Start 37 -End 64 -Delay 32
 
-    Invoke-WebRequest -Uri $payloadUrl -OutFile $PayloadPath -UseBasicParsing
+    try {
+        Invoke-WebRequest -Uri $payloadUrl -OutFile $PayloadPath -UseBasicParsing
+    }
+    catch {
+        throw "Download failed. Check your GitHub release asset or repository file."
+    }
 
     if (-not (Test-Path -LiteralPath $PayloadPath)) {
         throw "Download failed. Interface package not found."
@@ -319,7 +408,9 @@ function Download-Interface {
         throw "Downloaded interface package is incomplete."
     }
 
-    Show-PremiumBar -Label "Preparing launch environment" -Start 65 -End 76 -Delay 28
+    Verify-PayloadHash
+
+    Show-PremiumBar -Label "Preparing launch environment" -Start 65 -End 76 -Delay 30
 }
 
 function Test-ModuleInstalled {
@@ -332,12 +423,15 @@ function Test-ModuleInstalled {
         $args = @()
         $args += $Runtime.Args
         $args += @("-c", "import $ImportName; print('OK')")
+
         $output = & $Runtime.File @args 2>$null
 
         if ($LASTEXITCODE -eq 0 -and (($output -join "").Trim() -eq "OK")) {
             return $true
         }
-    } catch {}
+    }
+    catch {
+    }
 
     return $false
 }
@@ -353,6 +447,7 @@ function Install-ModulePackage {
     $args += @("-m", "pip", "install", "--user", "--upgrade", "--disable-pip-version-check", $PackageName)
 
     $null = & $Runtime.File @args 2>&1
+
     if ($LASTEXITCODE -ne 0) {
         throw "A required component could not be installed."
     }
@@ -361,8 +456,8 @@ function Install-ModulePackage {
 function Ensure-Components {
     param($Runtime)
 
-    Write-Status "Checking premium components..." Yellow
-    Show-PremiumBar -Label "Verifying interface components" -Start 77 -End 89 -Delay 26
+    Write-Status "Checking premium components." Yellow
+    Show-PremiumBar -Label "Verifying interface components" -Start 77 -End 89 -Delay 28
 
     foreach ($module in $RequiredModules) {
         if (-not (Test-ModuleInstalled -Runtime $Runtime -ImportName $module.ImportName)) {
@@ -374,7 +469,7 @@ function Ensure-Components {
 function Open-Interface {
     param($Runtime)
 
-    Write-Status "Opening premium interface..." Green
+    Write-Status "Opening premium interface." Green
     Show-PremiumBar -Label "Opening interface" -Start 90 -End 91 -Delay 50
 
     $windowed = Get-WindowedEngine -Runtime $Runtime
@@ -388,7 +483,13 @@ function Open-Interface {
 
 function Exit-Runner {
     Start-Sleep -Milliseconds 700
-    try { [Console]::CursorVisible = $true } catch {}
+
+    try {
+        [Console]::CursorVisible = $true
+    }
+    catch {
+    }
+
     [System.Environment]::Exit(0)
 }
 
@@ -408,7 +509,11 @@ try {
     Exit-Runner
 }
 catch {
-    try { [Console]::CursorVisible = $true } catch {}
+    try {
+        [Console]::CursorVisible = $true
+    }
+    catch {
+    }
 
     Write-Host ""
     Write-Host "   [GODPROJEXTH ERROR]" -ForegroundColor Red
