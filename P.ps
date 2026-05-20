@@ -10,6 +10,7 @@ $ExeFileName = "POWERSHELLGODPROJEXTH.exe"
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthPremium"
 $ExePath = Join-Path $InstallDir $ExeFileName
 
+# ถ้าเปลี่ยนไฟล์ .exe ใหม่ ต้องเปลี่ยน SHA256 ตรงนี้ด้วย
 $ExpectedSha256 = "C26D4FC1601831B2E0A29C698F9612128DF882FA22680FA4C317A4CE812036A6"
 
 function Initialize-Console {
@@ -105,7 +106,7 @@ function Write-Status {
     Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
 }
 
-function Get-CleanLogo {
+function Get-PixelGlyphLines {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text
@@ -113,95 +114,95 @@ function Get-CleanLogo {
 
     $glyphs = @{
         "A" = @(
-            "  /\  ",
-            " /  \ ",
-            "/----\",
-            "|    |",
-            "|    |"
+            " ▓▓▓ ",
+            "▓   ▓",
+            "▓▓▓▓▓",
+            "▓   ▓",
+            "▓   ▓"
         )
         "D" = @(
-            "|---\ ",
-            "|    |",
-            "|    |",
-            "|    |",
-            "|---/ "
+            "▓▓▓▓ ",
+            "▓   ▓",
+            "▓   ▓",
+            "▓   ▓",
+            "▓▓▓▓ "
         )
         "E" = @(
-            "|----",
-            "|    ",
-            "|--- ",
-            "|    ",
-            "|----"
+            "▓▓▓▓▓",
+            "▓    ",
+            "▓▓▓▓ ",
+            "▓    ",
+            "▓▓▓▓▓"
         )
         "G" = @(
-            " /---",
-            "|    ",
-            "|  --",
-            "|   |",
-            " \--/"
+            " ▓▓▓▓",
+            "▓    ",
+            "▓ ▓▓▓",
+            "▓   ▓",
+            " ▓▓▓ "
         )
         "H" = @(
-            "|    |",
-            "|    |",
-            "|----|",
-            "|    |",
-            "|    |"
+            "▓   ▓",
+            "▓   ▓",
+            "▓▓▓▓▓",
+            "▓   ▓",
+            "▓   ▓"
         )
         "J" = @(
-            "  ---|",
-            "     |",
-            "     |",
-            "|    |",
-            " \--/ "
+            "  ▓▓▓",
+            "   ▓ ",
+            "   ▓ ",
+            "▓  ▓ ",
+            " ▓▓  "
         )
         "L" = @(
-            "|    ",
-            "|    ",
-            "|    ",
-            "|    ",
-            "|----"
+            "▓    ",
+            "▓    ",
+            "▓    ",
+            "▓    ",
+            "▓▓▓▓▓"
         )
         "O" = @(
-            " /--\ ",
-            "|    |",
-            "|    |",
-            "|    |",
-            " \--/ "
+            " ▓▓▓ ",
+            "▓   ▓",
+            "▓   ▓",
+            "▓   ▓",
+            " ▓▓▓ "
         )
         "P" = @(
-            "|---\ ",
-            "|    |",
-            "|---/ ",
-            "|     ",
-            "|     "
+            "▓▓▓▓ ",
+            "▓   ▓",
+            "▓▓▓▓ ",
+            "▓    ",
+            "▓    "
         )
         "R" = @(
-            "|---\ ",
-            "|    |",
-            "|---/ ",
-            "|  \  ",
-            "|   \ "
+            "▓▓▓▓ ",
+            "▓   ▓",
+            "▓▓▓▓ ",
+            "▓  ▓ ",
+            "▓   ▓"
         )
         "T" = @(
-            "------",
-            "  ||  ",
-            "  ||  ",
-            "  ||  ",
-            "  ||  "
+            "▓▓▓▓▓",
+            "  ▓  ",
+            "  ▓  ",
+            "  ▓  ",
+            "  ▓  "
         )
         "X" = @(
-            "\    /",
-            " \  / ",
-            "  ><  ",
-            " /  \ ",
-            "/    \"
+            "▓   ▓",
+            " ▓ ▓ ",
+            "  ▓  ",
+            " ▓ ▓ ",
+            "▓   ▓"
         )
         " " = @(
-            "      ",
-            "      ",
-            "      ",
-            "      ",
-            "      "
+            "     ",
+            "     ",
+            "     ",
+            "     ",
+            "     "
         )
     }
 
@@ -223,29 +224,34 @@ function Get-CleanLogo {
     return $rows
 }
 
-function Show-CleanLogo {
+function Show-PixelLogo {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$Text
+        [string]$Text,
+
+        [int]$Slant = 2
     )
 
-    $lines = Get-CleanLogo -Text $Text
+    $lines = Get-PixelGlyphLines -Text $Text
+    $rowIndex = 0
 
     foreach ($line in $lines) {
-        Write-Centered $line Yellow 0
-        Start-Sleep -Milliseconds 14
+        $slantedLine = (" " * ($rowIndex * $Slant)) + $line
+        Write-Centered $slantedLine Yellow 0
+        Start-Sleep -Milliseconds 16
+        $rowIndex++
     }
 }
 
 function Show-FrameTop {
     $width = Get-ConsoleWidthSafe
-    $inner = [Math]::Min(82, [Math]::Max(56, $width - 20))
+    $inner = [Math]::Min(84, [Math]::Max(58, $width - 20))
     Write-Centered ("╔" + ("═" * $inner) + "╗") DarkYellow
 }
 
 function Show-FrameBottom {
     $width = Get-ConsoleWidthSafe
-    $inner = [Math]::Min(82, [Math]::Max(56, $width - 20))
+    $inner = [Math]::Min(84, [Math]::Max(58, $width - 20))
     Write-Centered ("╚" + ("═" * $inner) + "╝") DarkYellow
 }
 
@@ -255,7 +261,7 @@ function Show-Header {
 
     Show-FrameTop
     Write-Host ""
-    Show-CleanLogo "GODPROJEXTH"
+    Show-PixelLogo "GODPROJEXTH" 2
     Write-Host ""
     Show-FrameBottom
 
@@ -277,7 +283,7 @@ function Show-PremiumBar {
         [int]$Delay = 4
     )
 
-    $barWidth = 46
+    $barWidth = 48
     $frames = @("◜", "◠", "◝", "◞", "◡", "◟")
     $shine = @("◆", "✦", "◇", "✦")
 
@@ -285,6 +291,10 @@ function Show-PremiumBar {
     Write-Centered $Label Yellow 2
 
     for ($i = $Start; $i -le $End; $i += 2) {
+        if ($i -gt 100) {
+            $i = 100
+        }
+
         $filled = [Math]::Floor(($i / 100) * $barWidth)
 
         if ($filled -lt 0) {
@@ -336,8 +346,8 @@ function Show-PremiumBar {
 
 function Show-Successfully {
     Write-Host ""
-    Write-Centered "SUCCESSFULLY" Green 5
-    Start-Sleep -Milliseconds 220
+    Write-Centered "SUCCESSFULLY" Green 4
+    Start-Sleep -Milliseconds 180
 }
 
 function Show-CreditLine {
@@ -356,9 +366,9 @@ function Show-EndCredits {
 
     Show-FrameTop
     Write-Host ""
-    Show-CleanLogo "ALPHA"
+    Show-PixelLogo "ALPHA" 2
     Write-Host ""
-    Show-CleanLogo "GODPROJEXTH"
+    Show-PixelLogo "GODPROJEXTH" 2
     Write-Host ""
     Show-FrameBottom
 
