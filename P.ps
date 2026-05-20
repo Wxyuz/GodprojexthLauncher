@@ -10,7 +10,6 @@ $ExeFileName = "POWERSHELLGODPROJEXTH.exe"
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthPremium"
 $ExePath = Join-Path $InstallDir $ExeFileName
 
-# ถ้าเปลี่ยนไฟล์ .exe ใหม่ ต้องเปลี่ยน SHA256 ตรงนี้ด้วย
 $ExpectedSha256 = "C26D4FC1601831B2E0A29C698F9612128DF882FA22680FA4C317A4CE812036A6"
 
 function Initialize-Console {
@@ -28,7 +27,7 @@ function Initialize-Console {
         $buffer = $Host.UI.RawUI.BufferSize
         $window = $Host.UI.RawUI.WindowSize
 
-        $targetWidth = [Math]::Min(112, $max.Width)
+        $targetWidth = [Math]::Min(116, $max.Width)
         $targetHeight = [Math]::Min(34, $max.Height)
 
         if ($buffer.Width -lt $targetWidth) {
@@ -106,7 +105,7 @@ function Write-Status {
     Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
 }
 
-function Get-PixelGlyphLines {
+function Get-PixelItalicGlyphLines {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text
@@ -114,95 +113,95 @@ function Get-PixelGlyphLines {
 
     $glyphs = @{
         "A" = @(
-            " ▓▓▓ ",
-            "▓   ▓",
-            "▓▓▓▓▓",
-            "▓   ▓",
-            "▓   ▓"
+            "  ▓▓  ",
+            " ▓  ▓ ",
+            "▓▓▓▓▓▓",
+            "▓    ▓",
+            "▓    ▓"
         )
         "D" = @(
-            "▓▓▓▓ ",
-            "▓   ▓",
-            "▓   ▓",
-            "▓   ▓",
-            "▓▓▓▓ "
+            "▓▓▓▓  ",
+            "▓   ▓ ",
+            "▓    ▓",
+            "▓   ▓ ",
+            "▓▓▓▓  "
         )
         "E" = @(
-            "▓▓▓▓▓",
-            "▓    ",
-            "▓▓▓▓ ",
-            "▓    ",
-            "▓▓▓▓▓"
+            "▓▓▓▓▓▓",
+            "▓     ",
+            "▓▓▓▓▓ ",
+            "▓     ",
+            "▓▓▓▓▓▓"
         )
         "G" = @(
-            " ▓▓▓▓",
-            "▓    ",
-            "▓ ▓▓▓",
-            "▓   ▓",
-            " ▓▓▓ "
+            " ▓▓▓▓▓",
+            "▓     ",
+            "▓  ▓▓▓",
+            "▓    ▓",
+            " ▓▓▓▓ "
         )
         "H" = @(
-            "▓   ▓",
-            "▓   ▓",
-            "▓▓▓▓▓",
-            "▓   ▓",
-            "▓   ▓"
+            "▓    ▓",
+            "▓    ▓",
+            "▓▓▓▓▓▓",
+            "▓    ▓",
+            "▓    ▓"
         )
         "J" = @(
-            "  ▓▓▓",
-            "   ▓ ",
-            "   ▓ ",
-            "▓  ▓ ",
-            " ▓▓  "
+            "   ▓▓▓",
+            "    ▓ ",
+            "    ▓ ",
+            "▓   ▓ ",
+            " ▓▓▓  "
         )
         "L" = @(
-            "▓    ",
-            "▓    ",
-            "▓    ",
-            "▓    ",
-            "▓▓▓▓▓"
+            "▓     ",
+            "▓     ",
+            "▓     ",
+            "▓     ",
+            "▓▓▓▓▓▓"
         )
         "O" = @(
-            " ▓▓▓ ",
-            "▓   ▓",
-            "▓   ▓",
-            "▓   ▓",
-            " ▓▓▓ "
+            " ▓▓▓▓ ",
+            "▓    ▓",
+            "▓    ▓",
+            "▓    ▓",
+            " ▓▓▓▓ "
         )
         "P" = @(
-            "▓▓▓▓ ",
-            "▓   ▓",
-            "▓▓▓▓ ",
-            "▓    ",
-            "▓    "
+            "▓▓▓▓▓ ",
+            "▓    ▓",
+            "▓▓▓▓▓ ",
+            "▓     ",
+            "▓     "
         )
         "R" = @(
-            "▓▓▓▓ ",
-            "▓   ▓",
-            "▓▓▓▓ ",
-            "▓  ▓ ",
-            "▓   ▓"
+            "▓▓▓▓▓ ",
+            "▓    ▓",
+            "▓▓▓▓▓ ",
+            "▓   ▓ ",
+            "▓    ▓"
         )
         "T" = @(
-            "▓▓▓▓▓",
-            "  ▓  ",
-            "  ▓  ",
-            "  ▓  ",
-            "  ▓  "
+            "▓▓▓▓▓▓",
+            "  ▓   ",
+            "  ▓   ",
+            "  ▓   ",
+            "  ▓   "
         )
         "X" = @(
-            "▓   ▓",
-            " ▓ ▓ ",
-            "  ▓  ",
-            " ▓ ▓ ",
-            "▓   ▓"
+            "▓    ▓",
+            " ▓  ▓ ",
+            "  ▓▓  ",
+            " ▓  ▓ ",
+            "▓    ▓"
         )
         " " = @(
-            "     ",
-            "     ",
-            "     ",
-            "     ",
-            "     "
+            "      ",
+            "      ",
+            "      ",
+            "      ",
+            "      "
         )
     }
 
@@ -224,7 +223,7 @@ function Get-PixelGlyphLines {
     return $rows
 }
 
-function Show-PixelLogo {
+function Show-PixelItalicLogo {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text,
@@ -232,26 +231,26 @@ function Show-PixelLogo {
         [int]$Slant = 2
     )
 
-    $lines = Get-PixelGlyphLines -Text $Text
+    $lines = Get-PixelItalicGlyphLines -Text $Text
     $rowIndex = 0
 
     foreach ($line in $lines) {
         $slantedLine = (" " * ($rowIndex * $Slant)) + $line
         Write-Centered $slantedLine Yellow 0
-        Start-Sleep -Milliseconds 16
+        Start-Sleep -Milliseconds 14
         $rowIndex++
     }
 }
 
 function Show-FrameTop {
     $width = Get-ConsoleWidthSafe
-    $inner = [Math]::Min(84, [Math]::Max(58, $width - 20))
+    $inner = [Math]::Min(86, [Math]::Max(60, $width - 20))
     Write-Centered ("╔" + ("═" * $inner) + "╗") DarkYellow
 }
 
 function Show-FrameBottom {
     $width = Get-ConsoleWidthSafe
-    $inner = [Math]::Min(84, [Math]::Max(58, $width - 20))
+    $inner = [Math]::Min(86, [Math]::Max(60, $width - 20))
     Write-Centered ("╚" + ("═" * $inner) + "╝") DarkYellow
 }
 
@@ -261,7 +260,7 @@ function Show-Header {
 
     Show-FrameTop
     Write-Host ""
-    Show-PixelLogo "GODPROJEXTH" 2
+    Show-PixelItalicLogo "GODPROJEXTH" 2
     Write-Host ""
     Show-FrameBottom
 
@@ -283,7 +282,7 @@ function Show-PremiumBar {
         [int]$Delay = 4
     )
 
-    $barWidth = 48
+    $barWidth = 50
     $frames = @("◜", "◠", "◝", "◞", "◡", "◟")
     $shine = @("◆", "✦", "◇", "✦")
 
@@ -310,7 +309,7 @@ function Show-PremiumBar {
         $spark = $shine[$i % $shine.Count]
 
         $barFull = "█" * $filled
-        $barEmpty = "▒" * $empty
+        $barEmpty = "▓" * $empty
 
         $state = "CONNECTING"
 
@@ -325,7 +324,7 @@ function Show-PremiumBar {
         }
 
         $width = Get-ConsoleWidthSafe
-        $visualLength = $barWidth + 31
+        $visualLength = $barWidth + 32
         $left = [Math]::Max(0, [Math]::Floor(($width - $visualLength) / 2))
 
         Write-Host "`r" -NoNewline
@@ -366,9 +365,9 @@ function Show-EndCredits {
 
     Show-FrameTop
     Write-Host ""
-    Show-PixelLogo "ALPHA" 2
+    Show-PixelItalicLogo "ALPHA" 2
     Write-Host ""
-    Show-PixelLogo "GODPROJEXTH" 2
+    Show-PixelItalicLogo "GODPROJEXTH" 2
     Write-Host ""
     Show-FrameBottom
 
