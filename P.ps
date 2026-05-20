@@ -105,7 +105,7 @@ function Write-Status {
     Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
 }
 
-function Get-MediumLogo {
+function Get-CleanLogo {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text
@@ -113,86 +113,99 @@ function Get-MediumLogo {
 
     $glyphs = @{
         "A" = @(
-            " /A\ ",
-            "/___\",
-            "|   |",
-            "|   |"
+            "  /\  ",
+            " /  \ ",
+            "/----\",
+            "|    |",
+            "|    |"
         )
         "D" = @(
-            "|--\ ",
-            "|   |",
-            "|   |",
-            "|__/"
+            "|---\ ",
+            "|    |",
+            "|    |",
+            "|    |",
+            "|---/ "
         )
         "E" = @(
-            "|---",
-            "|-- ",
-            "|   ",
-            "|___"
+            "|----",
+            "|    ",
+            "|--- ",
+            "|    ",
+            "|----"
         )
         "G" = @(
-            "/---",
-            "| __",
-            "|  |",
-            "\__/"
+            " /---",
+            "|    ",
+            "|  --",
+            "|   |",
+            " \--/"
         )
         "H" = @(
-            "|  |",
-            "|--|",
-            "|  |",
-            "|  |"
+            "|    |",
+            "|    |",
+            "|----|",
+            "|    |",
+            "|    |"
         )
         "J" = @(
-            "  -|",
-            "   |",
-            "|  |",
-            "\__/"
+            "  ---|",
+            "     |",
+            "     |",
+            "|    |",
+            " \--/ "
         )
         "L" = @(
-            "|   ",
-            "|   ",
-            "|   ",
-            "|___"
+            "|    ",
+            "|    ",
+            "|    ",
+            "|    ",
+            "|----"
         )
         "O" = @(
-            "/--\",
-            "|  |",
-            "|  |",
-            "\__/"
+            " /--\ ",
+            "|    |",
+            "|    |",
+            "|    |",
+            " \--/ "
         )
         "P" = @(
-            "|--\",
-            "|__/",
-            "|   ",
-            "|   "
+            "|---\ ",
+            "|    |",
+            "|---/ ",
+            "|     ",
+            "|     "
         )
         "R" = @(
-            "|--\",
-            "|__/",
-            "| \ ",
-            "|  \"
+            "|---\ ",
+            "|    |",
+            "|---/ ",
+            "|  \  ",
+            "|   \ "
         )
         "T" = @(
-            "----",
-            " || ",
-            " || ",
-            " || "
+            "------",
+            "  ||  ",
+            "  ||  ",
+            "  ||  ",
+            "  ||  "
         )
         "X" = @(
-            "\  /",
-            " >< ",
-            "/  \",
-            "/  \"
+            "\    /",
+            " \  / ",
+            "  ><  ",
+            " /  \ ",
+            "/    \"
         )
         " " = @(
-            "    ",
-            "    ",
-            "    ",
-            "    "
+            "      ",
+            "      ",
+            "      ",
+            "      ",
+            "      "
         )
     }
 
-    $rows = @("", "", "", "")
+    $rows = @("", "", "", "", "")
     $chars = $Text.ToUpperInvariant().ToCharArray()
 
     foreach ($char in $chars) {
@@ -202,7 +215,7 @@ function Get-MediumLogo {
             $key = " "
         }
 
-        for ($i = 0; $i -lt 4; $i++) {
+        for ($i = 0; $i -lt 5; $i++) {
             $rows[$i] += $glyphs[$key][$i] + " "
         }
     }
@@ -210,30 +223,30 @@ function Get-MediumLogo {
     return $rows
 }
 
-function Show-MediumLogo {
+function Show-CleanLogo {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text
     )
 
-    $lines = Get-MediumLogo -Text $Text
+    $lines = Get-CleanLogo -Text $Text
 
     foreach ($line in $lines) {
         Write-Centered $line Yellow 0
-        Start-Sleep -Milliseconds 12
+        Start-Sleep -Milliseconds 14
     }
 }
 
 function Show-FrameTop {
     $width = Get-ConsoleWidthSafe
-    $inner = [Math]::Min(76, [Math]::Max(52, $width - 22))
-    Write-Centered ("╭" + ("─" * $inner) + "╮") DarkYellow
+    $inner = [Math]::Min(82, [Math]::Max(56, $width - 20))
+    Write-Centered ("╔" + ("═" * $inner) + "╗") DarkYellow
 }
 
 function Show-FrameBottom {
     $width = Get-ConsoleWidthSafe
-    $inner = [Math]::Min(76, [Math]::Max(52, $width - 22))
-    Write-Centered ("╰" + ("─" * $inner) + "╯") DarkYellow
+    $inner = [Math]::Min(82, [Math]::Max(56, $width - 20))
+    Write-Centered ("╚" + ("═" * $inner) + "╝") DarkYellow
 }
 
 function Show-Header {
@@ -242,7 +255,7 @@ function Show-Header {
 
     Show-FrameTop
     Write-Host ""
-    Show-MediumLogo "GODPROJEXTH"
+    Show-CleanLogo "GODPROJEXTH"
     Write-Host ""
     Show-FrameBottom
 
@@ -264,9 +277,9 @@ function Show-PremiumBar {
         [int]$Delay = 4
     )
 
-    $barWidth = 42
+    $barWidth = 46
     $frames = @("◜", "◠", "◝", "◞", "◡", "◟")
-    $shine = @("·", "✦", "◆", "✦")
+    $shine = @("◆", "✦", "◇", "✦")
 
     Write-Host ""
     Write-Centered $Label Yellow 2
@@ -286,20 +299,23 @@ function Show-PremiumBar {
         $spin = $frames[$i % $frames.Count]
         $spark = $shine[$i % $shine.Count]
 
-        $barFull = "━" * $filled
-        $barEmpty = "─" * $empty
+        $barFull = "█" * $filled
+        $barEmpty = "▒" * $empty
 
         $state = "CONNECTING"
 
         if ($i -ge 35 -and $i -lt 70) {
             $state = "LOADING"
         }
-        elseif ($i -ge 70) {
-            $state = "READY"
+        elseif ($i -ge 70 -and $i -lt 100) {
+            $state = "FINALIZING"
+        }
+        elseif ($i -ge 100) {
+            $state = "SUCCESSFULLY"
         }
 
         $width = Get-ConsoleWidthSafe
-        $visualLength = $barWidth + 27
+        $visualLength = $barWidth + 31
         $left = [Math]::Max(0, [Math]::Floor(($width - $visualLength) / 2))
 
         Write-Host "`r" -NoNewline
@@ -318,6 +334,12 @@ function Show-PremiumBar {
     Write-Host ""
 }
 
+function Show-Successfully {
+    Write-Host ""
+    Write-Centered "SUCCESSFULLY" Green 5
+    Start-Sleep -Milliseconds 220
+}
+
 function Show-CreditLine {
     param(
         [string]$Name,
@@ -334,9 +356,9 @@ function Show-EndCredits {
 
     Show-FrameTop
     Write-Host ""
-    Show-MediumLogo "ALPHA"
+    Show-CleanLogo "ALPHA"
     Write-Host ""
-    Show-MediumLogo "GODPROJEXTH"
+    Show-CleanLogo "GODPROJEXTH"
     Write-Host ""
     Show-FrameBottom
 
@@ -344,6 +366,7 @@ function Show-EndCredits {
     Write-Centered "PREMIUM INTERFACE READY" Yellow 2
 
     Show-PremiumBar -Label "Finalizing premium session" -Start 90 -End 100 -Delay 5
+    Show-Successfully
 
     Write-Host ""
     Write-Centered "╭────────────────────────────────────────────╮" DarkYellow
@@ -467,7 +490,8 @@ function Verify-Exe {
 
 function Open-GuiExe {
     Write-Status "Opening premium interface." Green
-    Show-PremiumBar -Label "Opening interface" -Start 89 -End 96 -Delay 4
+    Show-PremiumBar -Label "Opening interface" -Start 89 -End 100 -Delay 4
+    Show-Successfully
 
     Start-Process -FilePath $ExePath -WorkingDirectory $InstallDir
 }
