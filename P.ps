@@ -7,7 +7,8 @@ $RepoName = "GodprojexthLauncher"
 $PayloadFileName = "Powershell.py"
 
 $AppRoot = Join-Path $env:LOCALAPPDATA "GodprojexthPremium"
-$PayloadPath = Join-Path $AppRoot "GODPROJEXTH_Interface.cache"
+$PayloadPath = Join-Path $AppRoot "Powershell.py"
+$LogPath = Join-Path $AppRoot "launch_error.log"
 
 $RequiredModules = @(
     @{ ImportName = "PySide6"; PackageName = "PySide6" },
@@ -28,20 +29,19 @@ function Initialize-Console {
     try {
         $Host.UI.RawUI.WindowTitle = "GODPROJEXTH PREMIUM RUNNER"
 
-        $currentBuffer = $Host.UI.RawUI.BufferSize
-        $currentWindow = $Host.UI.RawUI.WindowSize
+        $buffer = $Host.UI.RawUI.BufferSize
+        $window = $Host.UI.RawUI.WindowSize
+        $max = $Host.UI.RawUI.MaxPhysicalWindowSize
 
-        $targetWidth = 118
-        $targetHeight = 34
+        $targetWidth = [Math]::Min(118, $max.Width)
+        $targetHeight = [Math]::Min(34, $max.Height)
 
-        if ($currentBuffer.Width -lt $targetWidth) {
-            $Host.UI.RawUI.BufferSize = New-Object System.Management.Automation.Host.Size($targetWidth, [Math]::Max($currentBuffer.Height, 3000))
+        if ($buffer.Width -lt $targetWidth) {
+            $Host.UI.RawUI.BufferSize = New-Object System.Management.Automation.Host.Size($targetWidth, [Math]::Max($buffer.Height, 3000))
         }
 
-        if ($currentWindow.Width -lt 100) {
-            $safeWidth = [Math]::Min($targetWidth, $Host.UI.RawUI.MaxPhysicalWindowSize.Width)
-            $safeHeight = [Math]::Min($targetHeight, $Host.UI.RawUI.MaxPhysicalWindowSize.Height)
-            $Host.UI.RawUI.WindowSize = New-Object System.Management.Automation.Host.Size($safeWidth, $safeHeight)
+        if ($window.Width -lt 100) {
+            $Host.UI.RawUI.WindowSize = New-Object System.Management.Automation.Host.Size($targetWidth, $targetHeight)
         }
     }
     catch {
@@ -81,28 +81,6 @@ function Write-Typed {
     }
 }
 
-function Write-TypedLine {
-    param(
-        [string]$Text,
-        [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-        [int]$Delay = 16
-    )
-
-    Write-Host "   " -NoNewline
-    Write-Typed $Text $Color $Delay
-}
-
-function Write-Status {
-    param(
-        [string]$Text,
-        [System.ConsoleColor]$Color = [System.ConsoleColor]::Green,
-        [int]$Delay = 10
-    )
-
-    Write-Host "   " -NoNewline
-    Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
-}
-
 function Write-Centered {
     param(
         [string]$Text,
@@ -126,6 +104,17 @@ function Write-Centered {
     }
 }
 
+function Write-Status {
+    param(
+        [string]$Text,
+        [System.ConsoleColor]$Color = [System.ConsoleColor]::Green,
+        [int]$Delay = 10
+    )
+
+    Write-Host "   " -NoNewline
+    Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
+}
+
 function Get-BigTextLines {
     param(
         [Parameter(Mandatory = $true)]
@@ -133,97 +122,19 @@ function Get-BigTextLines {
     )
 
     $glyphs = @{
-        "A" = @(
-            "  █  ",
-            " █ █ ",
-            "█████",
-            "█   █",
-            "█   █"
-        )
-        "D" = @(
-            "████ ",
-            "█   █",
-            "█   █",
-            "█   █",
-            "████ "
-        )
-        "E" = @(
-            "█████",
-            "█    ",
-            "████ ",
-            "█    ",
-            "█████"
-        )
-        "G" = @(
-            " ████",
-            "█    ",
-            "█ ███",
-            "█   █",
-            " ███ "
-        )
-        "H" = @(
-            "█   █",
-            "█   █",
-            "█████",
-            "█   █",
-            "█   █"
-        )
-        "J" = @(
-            "  ███",
-            "   █ ",
-            "   █ ",
-            "█  █ ",
-            " ██  "
-        )
-        "L" = @(
-            "█    ",
-            "█    ",
-            "█    ",
-            "█    ",
-            "█████"
-        )
-        "O" = @(
-            " ███ ",
-            "█   █",
-            "█   █",
-            "█   █",
-            " ███ "
-        )
-        "P" = @(
-            "████ ",
-            "█   █",
-            "████ ",
-            "█    ",
-            "█    "
-        )
-        "R" = @(
-            "████ ",
-            "█   █",
-            "████ ",
-            "█  █ ",
-            "█   █"
-        )
-        "T" = @(
-            "█████",
-            "  █  ",
-            "  █  ",
-            "  █  ",
-            "  █  "
-        )
-        "X" = @(
-            "█   █",
-            " █ █ ",
-            "  █  ",
-            " █ █ ",
-            "█   █"
-        )
-        " " = @(
-            "     ",
-            "     ",
-            "     ",
-            "     ",
-            "     "
-        )
+        "A" = @("  █  "," █ █ ","█████","█   █","█   █")
+        "D" = @("████ ","█   █","█   █","█   █","████ ")
+        "E" = @("█████","█    ","████ ","█    ","█████")
+        "G" = @(" ████","█    ","█ ███","█   █"," ███ ")
+        "H" = @("█   █","█   █","█████","█   █","█   █")
+        "J" = @("  ███","   █ ","   █ ","█  █ "," ██  ")
+        "L" = @("█    ","█    ","█    ","█    ","█████")
+        "O" = @(" ███ ","█   █","█   █","█   █"," ███ ")
+        "P" = @("████ ","█   █","████ ","█    ","█    ")
+        "R" = @("████ ","█   █","████ ","█  █ ","█   █")
+        "T" = @("█████","  █  ","  █  ","  █  ","  █  ")
+        "X" = @("█   █"," █ █ ","  █  "," █ █ ","█   █")
+        " " = @("     ","     ","     ","     ","     ")
     }
 
     $result = @("", "", "", "", "")
@@ -251,7 +162,7 @@ function Write-BigText {
 
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
 
-        [int]$Delay = 2
+        [int]$Delay = 1
     )
 
     $lines = Get-BigTextLines -Text $Text
@@ -262,44 +173,34 @@ function Write-BigText {
     }
 }
 
-function Write-PremiumDivider {
-    param(
-        [System.ConsoleColor]$Color = [System.ConsoleColor]::DarkYellow
-    )
-
+function Write-PremiumFrameTop {
     $width = Get-ConsoleWidthSafe
     $inner = [Math]::Min(86, [Math]::Max(58, $width - 16))
-    $line = "═" * $inner
-    Write-Centered "╔$line╗" $Color 0
+    Write-Centered ("╔" + ("═" * $inner) + "╗") DarkYellow 0
 }
 
-function Write-PremiumDividerBottom {
-    param(
-        [System.ConsoleColor]$Color = [System.ConsoleColor]::DarkYellow
-    )
-
+function Write-PremiumFrameBottom {
     $width = Get-ConsoleWidthSafe
     $inner = [Math]::Min(86, [Math]::Max(58, $width - 16))
-    $line = "═" * $inner
-    Write-Centered "╚$line╝" $Color 0
+    Write-Centered ("╚" + ("═" * $inner) + "╝") DarkYellow 0
 }
 
 function Show-GodprojexthArt {
-    Write-PremiumDivider
+    Write-PremiumFrameTop
     Write-Host ""
     Write-BigText "GODPROJEXTH" Yellow 1
     Write-Host ""
-    Write-PremiumDividerBottom
+    Write-PremiumFrameBottom
 }
 
 function Show-AlphaGodprojexthArt {
-    Write-PremiumDivider
+    Write-PremiumFrameTop
     Write-Host ""
     Write-BigText "ALPHA" Yellow 1
     Write-Host ""
     Write-BigText "GODPROJEXTH" Yellow 1
     Write-Host ""
-    Write-PremiumDividerBottom
+    Write-PremiumFrameBottom
 }
 
 function Show-Header {
@@ -516,6 +417,28 @@ function Get-WindowedEngine {
     return $Runtime
 }
 
+function Get-ConsoleEngine {
+    param($Runtime)
+
+    try {
+        if ((Split-Path -Leaf $Runtime.File).ToLower() -eq "pythonw.exe") {
+            $folder = Split-Path -Parent $Runtime.File
+            $python = Join-Path $folder "python.exe"
+
+            if (Test-Path -LiteralPath $python) {
+                return @{
+                    File = $python
+                    Args = @()
+                }
+            }
+        }
+    }
+    catch {
+    }
+
+    return $Runtime
+}
+
 function Get-PayloadUrl {
     $releaseApi = "https://api.github.com/repos/$RepoOwner/$RepoName/releases/latest"
 
@@ -638,11 +561,30 @@ function Ensure-Components {
     }
 }
 
+function Test-PayloadCanCompile {
+    param($Runtime)
+
+    $consoleEngine = Get-ConsoleEngine -Runtime $Runtime
+
+    $args = @()
+    $args += $consoleEngine.Args
+    $args += @("-m", "py_compile", "`"$PayloadPath`"")
+
+    $output = & $consoleEngine.File @args 2>&1
+
+    if ($LASTEXITCODE -ne 0) {
+        $output | Out-File -LiteralPath $LogPath -Encoding UTF8 -Force
+        throw "Interface file has an error. Saved details to: $LogPath"
+    }
+}
+
 function Open-Interface {
     param($Runtime)
 
     Write-Status "Opening premium interface." Green
     Show-PremiumBar -Label "Opening interface" -Start 90 -End 91 -Delay 50
+
+    Test-PayloadCanCompile -Runtime $Runtime
 
     $windowed = Get-WindowedEngine -Runtime $Runtime
 
@@ -650,7 +592,26 @@ function Open-Interface {
     $argList += $windowed.Args
     $argList += @("`"$PayloadPath`"")
 
-    Start-Process -FilePath $windowed.File -ArgumentList $argList -WorkingDirectory $AppRoot
+    $process = Start-Process -FilePath $windowed.File -ArgumentList $argList -WorkingDirectory $AppRoot -PassThru
+
+    Start-Sleep -Milliseconds 1500
+
+    if ($process.HasExited) {
+        Write-Host ""
+        Write-Host "   [GODPROJEXTH DEBUG]" -ForegroundColor Yellow
+        Write-Host "   GUI closed immediately. Reopening with visible console to show the error..." -ForegroundColor Yellow
+        Write-Host ""
+
+        $consoleEngine = Get-ConsoleEngine -Runtime $Runtime
+
+        $debugArgs = @()
+        $debugArgs += $consoleEngine.Args
+        $debugArgs += @("`"$PayloadPath`"")
+
+        Start-Process -FilePath $consoleEngine.File -ArgumentList $debugArgs -WorkingDirectory $AppRoot
+        Start-Sleep -Milliseconds 1200
+        throw "GUI could not stay open. Check the debug console or log file."
+    }
 }
 
 function Exit-Runner {
@@ -691,6 +652,13 @@ catch {
     Write-Host ""
     Write-Host "   [GODPROJEXTH ERROR]" -ForegroundColor Red
     Write-Host "   $($_.Exception.Message)" -ForegroundColor Red
+
+    if (Test-Path -LiteralPath $LogPath) {
+        Write-Host ""
+        Write-Host "   Log file:" -ForegroundColor Yellow
+        Write-Host "   $LogPath" -ForegroundColor Yellow
+    }
+
     Write-Host ""
     Write-Host "   Press Enter to close..." -ForegroundColor Yellow
     [void][System.Console]::ReadLine()
