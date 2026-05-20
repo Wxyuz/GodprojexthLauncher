@@ -31,7 +31,7 @@ function Write-SlowText {
     param(
         [string]$Text,
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-        [int]$Delay = 26
+        [int]$Delay = 28
     )
 
     foreach ($char in $Text.ToCharArray()) {
@@ -46,7 +46,7 @@ function Write-GodStatus {
     param(
         [string]$Text,
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-        [int]$Delay = 16
+        [int]$Delay = 18
     )
 
     Write-Host "   " -NoNewline
@@ -58,23 +58,20 @@ function Show-GodHeader {
     Write-Host ""
 
     $logo = @(
-"        ________   ______   _______   _______   _______    ______        ",
-"       /  _____/  /  __  \ |   _   \ |   _   \ |   _   \  /  __  \       ",
-"      |  |  __   |  |  |  ||  | |  ||  | |  ||  | |  ||  |  |  |       ",
-"      |  | |_ |  |  |  |  ||  | |  ||  |_|  ||  |_|  ||  |  |  |       ",
-"      |  |__| |  |  |__|  ||  |_|  ||   ____/ |   ____/ |  |__|  |       ",
-"       \______/   \______/ |_______/ |__|      |__|       \______/        ",
-"                                                                          ",
-"              G O D P R O J E X T H   P R E M I U M                      "
+"   ####    ###   ####   ####   #####   ###    ###  #####  #   #  #####  #   #",
+"  #       #   #  #   #  #   #  #   #  #   #    #   #       # #     #    #   #",
+"  #  ##   #   #  #   #  ####   #####  #   #    #   ####     #      #    #####",
+"  #   #   #   #  #   #  #      #  #   #   #    #   #       # #     #    #   #",
+"   ####    ###   ####   #      #   #   ###   ###   #####  #   #    #    #   #"
     )
 
     foreach ($line in $logo) {
-        Write-Host $line -ForegroundColor Yellow
-        Start-Sleep -Milliseconds 70
+        Write-SlowText $line Yellow 3
+        Start-Sleep -Milliseconds 35
     }
 
     Write-Host ""
-    Write-SlowText "   GODPROJEXTH PREMIUM RUNNER" Yellow 34
+    Write-SlowText "   GODPROJEXTH PREMIUM RUNNER" Yellow 36
     Write-SlowText "   Secure Connect  ->  Premium Load  ->  Open Interface" DarkYellow 22
     Write-Host ""
 }
@@ -84,10 +81,10 @@ function Show-PremiumLoader {
         [string]$Text,
         [int]$From,
         [int]$To,
-        [int]$Delay = 32
+        [int]$Delay = 34
     )
 
-    $barWidth = 42
+    $barWidth = 44
 
     Write-Host "   " -NoNewline
     Write-SlowText $Text Yellow 18
@@ -104,15 +101,26 @@ function Show-PremiumLoader {
             $filled = $barWidth
         }
 
-        $barLeft = "█" * $filled
-        $barRight = "░" * $empty
+        $mainFill = "█" * $filled
+        $emptyFill = "░" * $empty
+        $spinner = @("◐", "◓", "◑", "◒")[$i % 4]
 
-        $spinner = @("◜", "◠", "◝", "◞", "◡", "◟")[$i % 6]
+        Write-Host "`r   " -NoNewline
+        Write-Host $spinner -NoNewline -ForegroundColor White
+        Write-Host "  [" -NoNewline -ForegroundColor DarkYellow
+        Write-Host $mainFill -NoNewline -ForegroundColor Yellow
+        Write-Host $emptyFill -NoNewline -ForegroundColor DarkGray
+        Write-Host ("] {0,3}%  " -f $i) -NoNewline -ForegroundColor Yellow
 
-        Write-Host "`r   $spinner  [" -NoNewline -ForegroundColor DarkYellow
-        Write-Host $barLeft -NoNewline -ForegroundColor Yellow
-        Write-Host $barRight -NoNewline -ForegroundColor DarkGray
-        Write-Host ("] {0,3}%" -f $i) -NoNewline -ForegroundColor Yellow
+        if ($i -lt 35) {
+            Write-Host "CONNECTING" -NoNewline -ForegroundColor DarkYellow
+        }
+        elseif ($i -lt 70) {
+            Write-Host "LOADING" -NoNewline -ForegroundColor Yellow
+        }
+        else {
+            Write-Host "FINALIZING" -NoNewline -ForegroundColor Green
+        }
 
         Start-Sleep -Milliseconds $Delay
     }
@@ -121,44 +129,87 @@ function Show-PremiumLoader {
     Write-Host ""
 }
 
+function Show-CreditLine {
+    param(
+        [string]$Left,
+        [string]$Right,
+        [System.ConsoleColor]$LeftColor = [System.ConsoleColor]::DarkYellow,
+        [System.ConsoleColor]$RightColor = [System.ConsoleColor]::Yellow
+    )
+
+    Write-Host "   |  " -NoNewline -ForegroundColor DarkYellow
+    Write-SlowText ($Left.PadRight(10) + " : ") $LeftColor 18 -NoNewLine
+    Write-SlowText $Right $RightColor 22
+}
+
+function Write-SlowText {
+    param(
+        [string]$Text,
+        [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
+        [int]$Delay = 28,
+        [switch]$NoNewLine
+    )
+
+    foreach ($char in $Text.ToCharArray()) {
+        Write-Host $char -NoNewline -ForegroundColor $Color
+        Start-Sleep -Milliseconds $Delay
+    }
+
+    if (-not $NoNewLine) {
+        Write-Host ""
+    }
+}
+
 function Show-AlphaCredit {
     Clear-Host
     Write-Host ""
 
-    $frameTop = "   +--------------------------------------------------------------+"
-    $frameMid = "   |                                                              |"
-    $frameBot = "   +--------------------------------------------------------------+"
-
-    Write-Host $frameTop -ForegroundColor DarkYellow
-    Write-Host $frameMid -ForegroundColor DarkYellow
-
-    Write-Host "   |" -NoNewline -ForegroundColor DarkYellow
-    Write-SlowText "              A L P H A   G O D P R O J E X T H                 " White 34
-    Write-Host "   |                                                              |" -ForegroundColor DarkYellow
-
-    $lines = @(
-"   |              PREMIUM INTERFACE INITIALIZED                   |",
-"   |              SECURE SESSION READY                            |",
-"   |              LAUNCHING USER INTERFACE                        |"
+    $title = @(
+"      AAAAA   LL       PPPPPP   HH   HH    AAAAA",
+"     AA   AA  LL       PP   PP  HH   HH   AA   AA",
+"     AAAAAAA  LL       PPPPPP   HHHHHHH   AAAAAAA",
+"     AA   AA  LL       PP       HH   HH   AA   AA",
+"     AA   AA  LLLLLLL  PP       HH   HH   AA   AA"
     )
 
-    foreach ($line in $lines) {
-        Write-Host $line -ForegroundColor Yellow
-        Start-Sleep -Milliseconds 180
+    $god = @(
+"   ####    ###   ####   ####   #####   ###    ###  #####  #   #  #####  #   #",
+"  #       #   #  #   #  #   #  #   #  #   #    #   #       # #     #    #   #",
+"  #  ##   #   #  #   #  ####   #####  #   #    #   ####     #      #    #####",
+"  #   #   #   #  #   #  #      #  #   #   #    #   #       # #     #    #   #",
+"   ####    ###   ####   #      #   #   ###   ###   #####  #   #    #    #   #"
+    )
+
+    Write-SlowText "   INITIALIZING PREMIUM CREDIT..." Yellow 34
+    Start-Sleep -Milliseconds 250
+    Write-Host ""
+
+    foreach ($line in $title) {
+        Write-SlowText $line Yellow 4
+        Start-Sleep -Milliseconds 70
     }
 
-    Write-Host $frameBot -ForegroundColor DarkYellow
     Write-Host ""
 
-    Write-Host "   " -NoNewline
-    Write-SlowText "ALPHA GODPROJEXTH" White 42
-
-    Write-Host "   " -NoNewline
-    Write-SlowText "Premium interface ready..." Yellow 26
+    foreach ($line in $god) {
+        Write-SlowText $line Yellow 3
+        Start-Sleep -Milliseconds 55
+    }
 
     Write-Host ""
-    Show-PremiumLoader -Text "Finalizing launch" -From 88 -To 100 -Delay 38
+    Write-SlowText "   ALPHA GODPROJEXTH" White 42
+    Write-SlowText "   PREMIUM INTERFACE READY..." Yellow 28
+    Write-Host ""
 
+    Write-Host "   +--------------------------------------------------+" -ForegroundColor DarkYellow
+    Show-CreditLine "WEBSITE" "GODPROJEXTH"
+    Show-CreditLine "YOUTUBE" "GODPROJEXTH"
+    Show-CreditLine "TIKTOK" "GODPROJEXTH"
+    Show-CreditLine "DISCORD" "GODPROJEXTH"
+    Write-Host "   +--------------------------------------------------+" -ForegroundColor DarkYellow
+    Write-Host ""
+
+    Show-PremiumLoader -Text "Finalizing premium launch" -From 88 -To 100 -Delay 42
     Start-Sleep -Milliseconds 450
 }
 
@@ -303,12 +354,12 @@ function Download-Payload {
     Ensure-Folder -Path $InstallDir
 
     Write-GodStatus "Connecting to premium server..." Yellow 24
-    Show-PremiumLoader -Text "Secure connection" -From 1 -To 18 -Delay 36
+    Show-PremiumLoader -Text "Secure premium connection" -From 1 -To 18 -Delay 40
 
     $downloadUrl = Get-LatestReleaseAssetUrl
 
-    Write-GodStatus "Connection authenticated." Green 20
-    Show-PremiumLoader -Text "Preparing premium data" -From 19 -To 38 -Delay 34
+    Write-GodStatus "Connection authenticated." Green 22
+    Show-PremiumLoader -Text "Preparing premium interface" -From 19 -To 38 -Delay 38
 
     try {
         Invoke-WebRequest -Uri $downloadUrl -OutFile $PayloadPath -UseBasicParsing
@@ -317,7 +368,7 @@ function Download-Payload {
         throw "Download failed. Check GitHub Release asset and click Update release."
     }
 
-    Show-PremiumLoader -Text "Loading interface package" -From 39 -To 60 -Delay 32
+    Show-PremiumLoader -Text "Loading protected interface" -From 39 -To 60 -Delay 36
 
     if (-not (Test-Path -LiteralPath $PayloadPath)) {
         throw "Download finished but payload was not found."
@@ -375,18 +426,18 @@ function Install-GuiDependencies {
     param($Runtime)
 
     Write-GodStatus "Checking premium engine..." Yellow 22
-    Show-PremiumLoader -Text "Checking engine components" -From 61 -To 76 -Delay 30
+    Show-PremiumLoader -Text "Checking engine components" -From 61 -To 76 -Delay 34
 
     foreach ($module in $RequiredModules) {
         $importName = $module.ImportName
         $packageName = $module.PackageName
 
         if (Test-PythonModule -Runtime $Runtime -ImportName $importName) {
-            Write-GodStatus "$packageName ready." Green 8
+            Write-GodStatus "$packageName ready." Green 9
             continue
         }
 
-        Write-GodStatus "Installing engine component..." Yellow 10
+        Write-GodStatus "Installing engine component..." Yellow 12
         Install-PythonPackage -Runtime $Runtime -PackageName $packageName
     }
 }
@@ -394,8 +445,8 @@ function Install-GuiDependencies {
 function Start-Interface {
     param($Runtime)
 
-    Write-GodStatus "Opening premium interface..." Yellow 22
-    Show-PremiumLoader -Text "Opening interface" -From 77 -To 87 -Delay 30
+    Write-GodStatus "Opening premium interface..." Yellow 24
+    Show-PremiumLoader -Text "Opening interface" -From 77 -To 87 -Delay 34
 
     $windowed = Get-WindowedRuntime -Runtime $Runtime
 
@@ -428,7 +479,7 @@ try {
         throw "Python 3 not found. Install Python 3 first. Avoid Microsoft Store alias."
     }
 
-    Write-GodStatus "Premium engine found." Green 20
+    Write-GodStatus "Premium engine found." Green 22
 
     Download-Payload
     Install-GuiDependencies -Runtime $runtime
