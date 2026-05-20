@@ -9,10 +9,6 @@ $PayloadFileName = "Powershell.py"
 $AppRoot = Join-Path $env:LOCALAPPDATA "GodprojexthPremium"
 $PayloadPath = Join-Path $AppRoot "GODPROJEXTH_Interface.cache"
 
-# ใส่ SHA256 ของไฟล์ Powershell.py ตรงนี้เพื่อกันไฟล์โดนแก้หรือโดนสลับ
-# ปล่อยว่างได้ แต่แนะนำให้ใส่ถ้าจะใช้งานจริง
-$ExpectedPayloadSha256 = ""
-
 $RequiredModules = @(
     @{ ImportName = "PySide6"; PackageName = "PySide6" },
     @{ ImportName = "requests"; PackageName = "requests" },
@@ -40,9 +36,13 @@ function Initialize-Console {
 
 function Write-Typed {
     param(
-        [Parameter(Mandatory = $true)][string]$Text,
+        [Parameter(Mandatory = $true)]
+        [string]$Text,
+
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-        [int]$Delay = 16,
+
+        [int]$Delay = 18,
+
         [switch]$NoNewLine
     )
 
@@ -60,7 +60,7 @@ function Write-TypedLine {
     param(
         [string]$Text,
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-        [int]$Delay = 14
+        [int]$Delay = 16
     )
 
     Write-Host "   " -NoNewline
@@ -95,35 +95,40 @@ function Write-ArtLine {
 
 function Show-GodprojexthArt {
     $art = @(
-"      ╭────────────────────────────────────────────────────────────╮",
-"      │   ╔═╗  ╔═╗  ╔═╗  ╔═╗  ╦═╗  ╔═╗     ╦  ╔═╗  ═╦═  ╦ ╦       │",
-"      │   ║ ╦  ║ ║  ║ ║  ╠═╝  ╠╦╝  ║ ║     ║  ║╣    ║   ╠═╣       │",
-"      │   ╚═╝  ╚═╝  ╚═╝  ╩    ╩╚═  ╚═╝    ╚╝  ╚═╝   ╩   ╩ ╩       │",
-"      ╰────────────────────────────────────────────────────────────╯"
+"      ╭────────────────────────────────────────────────────────────────────────╮",
+"      │  ╭━━╮ ╭━━╮ ╭━━╮ ╭━━╮ ╭━━╮ ╭━━╮    ╭╮ ╭━━╮ ╭╮ ╭╮ ╭━━━━╮ ╭╮  ╭╮       │",
+"      │  ┃╭━╯ ┃╭╮┃ ┃╭╮┃ ┃╭╮┃ ┃╭━╯ ┃╭╮┃    ┃┃ ┃╭━╯ ╰╲╱╯ ╰━╮╭━╯ ┃┃  ┃┃       │",
+"      │  ┃┃╭╮ ┃┃┃┃ ┃┃┃┃ ┃╰╯┃ ┃╰━╮ ┃┃┃┃    ┃┃ ┃╰━╮  ╱╲    ┃┃   ┃╰━━╯┃       │",
+"      │  ┃╰╯┃ ┃╰╯┃ ┃╰╯┃ ┃╭━╯ ┃╭━╯ ┃╰╯┃ ╭╮ ┃┃ ┃╭━╯ ╱╲╲    ┃┃   ┃╭━━╮┃       │",
+"      │  ╰━━╯ ╰━━╯ ╰━━╯ ╰╯   ╰╯   ╰━━╯ ╰━━╯ ╰━━╯ ╰╯ ╰╯   ╰╯   ╰╯  ╰╯       │",
+"      ╰────────────────────────────────────────────────────────────────────────╯"
     )
 
     foreach ($line in $art) {
         Write-ArtLine $line Yellow 2
-        Start-Sleep -Milliseconds 45
+        Start-Sleep -Milliseconds 42
     }
 }
 
 function Show-AlphaGodprojexthArt {
     $art = @(
 "      ╭────────────────────────────────────────────────────────────────────────────╮",
-"      │  ╔═╗  ╦    ╔═╗  ╦ ╦  ╔═╗      ╔═╗  ╔═╗  ╔═╗  ╔═╗  ╦═╗  ╔═╗               │",
-"      │  ╠═╣  ║    ╠═╝  ╠═╣  ╠═╣      ║ ╦  ║ ║  ║ ║  ╠═╝  ╠╦╝  ║ ║               │",
-"      │  ╩ ╩  ╩═╝  ╩    ╩ ╩  ╩ ╩      ╚═╝  ╚═╝  ╚═╝  ╩    ╩╚═  ╚═╝               │",
+"      │  ╭━━╮ ╭╮    ╭━━╮ ╭╮ ╭╮ ╭━━╮     ╭━━╮ ╭━━╮ ╭━━╮ ╭━━╮ ╭━━╮ ╭━━╮           │",
+"      │  ┃╭╮┃ ┃┃    ┃╭╮┃ ┃┃ ┃┃ ┃╭╮┃     ┃╭━╯ ┃╭╮┃ ┃╭╮┃ ┃╭╮┃ ┃╭━╯ ┃╭╮┃           │",
+"      │  ┃╰╯┃ ┃┃    ┃╰╯┃ ┃╰━╯┃ ┃╰╯┃     ┃┃╭╮ ┃┃┃┃ ┃┃┃┃ ┃╰╯┃ ┃╰━╮ ┃┃┃┃           │",
+"      │  ┃╭╮┃ ┃┃    ┃╭━╯ ┃╭━╮┃ ┃╭╮┃     ┃╰╯┃ ┃╰╯┃ ┃╰╯┃ ┃╭━╯ ┃╭━╯ ┃╰╯┃           │",
+"      │  ╰╯╰╯ ╰━━╯ ╰╯   ╰╯ ╰╯ ╰╯╰╯     ╰━━╯ ╰━━╯ ╰━━╯ ╰╯   ╰╯   ╰━━╯           │",
 "      │                                                                            │",
-"      │                         ╦  ╔═╗  ═╦═  ╦ ╦                                  │",
-"      │                         ║  ║╣    ║   ╠═╣                                  │",
-"      │                        ╚╝  ╚═╝   ╩   ╩ ╩                                  │",
+"      │                       ╭╮ ╭━━╮ ╭╮ ╭╮ ╭━━━━╮ ╭╮  ╭╮                         │",
+"      │                       ┃┃ ┃╭━╯ ╰╲╱╯ ╰━╮╭━╯ ┃┃  ┃┃                         │",
+"      │                   ╭╮  ┃┃ ┃╰━╮  ╱╲    ┃┃   ┃╰━━╯┃                         │",
+"      │                   ╰━━━╯ ╰━━╯ ╰╯ ╰╯   ╰╯   ╰╯  ╰╯                         │",
 "      ╰────────────────────────────────────────────────────────────────────────────╯"
     )
 
     foreach ($line in $art) {
         Write-ArtLine $line Yellow 2
-        Start-Sleep -Milliseconds 50
+        Start-Sleep -Milliseconds 40
     }
 }
 
@@ -132,17 +137,21 @@ function Show-Header {
     Write-Host ""
     Show-GodprojexthArt
     Write-Host ""
-    Write-TypedLine "GODPROJEXTH PREMIUM RUNNER" Yellow 22
-    Write-TypedLine "Secure Load  ->  Premium Connect  ->  Open Interface" DarkYellow 16
+    Write-TypedLine "PREMIUM RUNNER INITIALIZED" Yellow 24
+    Write-TypedLine "Secure Load  ->  Premium Connect  ->  Open Interface" DarkYellow 18
     Write-Host ""
 }
 
 function Show-PremiumBar {
     param(
-        [Parameter(Mandatory = $true)][string]$Label,
+        [Parameter(Mandatory = $true)]
+        [string]$Label,
+
         [int]$Start = 0,
+
         [int]$End = 100,
-        [int]$Delay = 26
+
+        [int]$Delay = 28
     )
 
     $barWidth = 44
@@ -153,7 +162,7 @@ function Show-PremiumBar {
     Write-Typed $Label Yellow 12
 
     for ($i = $Start; $i -le $End; $i++) {
-        $filled = [math]::Floor(($i / 100) * $barWidth)
+        $filled = [Math]::Floor(($i / 100) * $barWidth)
 
         if ($filled -lt 0) {
             $filled = 0
@@ -171,6 +180,7 @@ function Show-PremiumBar {
         $emptyText = "░" * $empty
 
         $state = "CONNECTING"
+
         if ($i -ge 35 -and $i -lt 70) {
             $state = "LOADING"
         }
@@ -265,6 +275,7 @@ function Find-Engine {
     }
 
     $pyLauncher = Get-Command "py.exe" -ErrorAction SilentlyContinue
+
     if ($pyLauncher -and ($pyLauncher.Source -notlike "*\WindowsApps\*")) {
         [void]$candidates.Add(@{
             File = $pyLauncher.Source
@@ -273,6 +284,7 @@ function Find-Engine {
     }
 
     $pythonExe = Get-Command "python.exe" -ErrorAction SilentlyContinue
+
     if ($pythonExe -and ($pythonExe.Source -notlike "*\WindowsApps\*")) {
         [void]$candidates.Add(@{
             File = $pythonExe.Source
@@ -316,6 +328,7 @@ function Get-WindowedEngine {
         }
 
         $pyw = Get-Command "pyw.exe" -ErrorAction SilentlyContinue
+
         if ($pyw -and ($pyw.Source -notlike "*\WindowsApps\*")) {
             return @{
                 File = $pyw.Source
@@ -363,20 +376,6 @@ function Get-PayloadUrl {
     throw "Cannot find interface package. Upload the file to Latest Release asset or commit it to main."
 }
 
-function Verify-PayloadHash {
-    if ([string]::IsNullOrWhiteSpace($ExpectedPayloadSha256)) {
-        return
-    }
-
-    $actual = (Get-FileHash -Algorithm SHA256 -Path $PayloadPath).Hash.ToUpperInvariant()
-    $expected = $ExpectedPayloadSha256.ToUpperInvariant()
-
-    if ($actual -ne $expected) {
-        Remove-Item -LiteralPath $PayloadPath -Force -ErrorAction SilentlyContinue
-        throw "Payload integrity check failed."
-    }
-}
-
 function Download-Interface {
     Ensure-Folder -Path $AppRoot
 
@@ -403,12 +402,11 @@ function Download-Interface {
     }
 
     $info = Get-Item -LiteralPath $PayloadPath
+
     if ($info.Length -lt 150) {
         Remove-Item -LiteralPath $PayloadPath -Force -ErrorAction SilentlyContinue
         throw "Downloaded interface package is incomplete."
     }
-
-    Verify-PayloadHash
 
     Show-PremiumBar -Label "Preparing launch environment" -Start 65 -End 76 -Delay 30
 }
@@ -498,6 +496,7 @@ try {
     Show-Header
 
     $runtime = Find-Engine
+
     if ($null -eq $runtime) {
         throw "No compatible engine was found on this system."
     }
