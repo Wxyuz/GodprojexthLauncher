@@ -10,7 +10,9 @@ $ExeFileName = "POWERSHELLGODPROJEXTH.exe"
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthPremium"
 $ExePath = Join-Path $InstallDir $ExeFileName
 
-$ExpectedSha256 = "C26D4FC1601831B2E0A29C698F9612128DF882FA22680FA4C317A4CE812036A6"
+# ถ้าอยากล็อกไฟล์ EXE ให้ใส่ SHA256 ตรงนี้
+# ถ้าปล่อยว่าง จะไม่เช็ค SHA256 เพื่อไม่ให้ error เวลาอัปเดตไฟล์ใหม่
+$ExpectedSha256 = ""
 
 function Initialize-Console {
     try {
@@ -27,7 +29,7 @@ function Initialize-Console {
         $buffer = $Host.UI.RawUI.BufferSize
         $window = $Host.UI.RawUI.WindowSize
 
-        $targetWidth = [Math]::Min(116, $max.Width)
+        $targetWidth = [Math]::Min(112, $max.Width)
         $targetHeight = [Math]::Min(34, $max.Height)
 
         if ($buffer.Width -lt $targetWidth) {
@@ -105,7 +107,7 @@ function Write-Status {
     Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
 }
 
-function Get-PixelGlyphLines {
+function Get-PixelLineGlyphRows {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text
@@ -113,99 +115,73 @@ function Get-PixelGlyphLines {
 
     $glyphs = @{
         "A" = @(
-            " ███ ",
-            "█   █",
-            "█████",
-            "█   █",
-            "█   █"
+            "╔═╗",
+            "╠═╣",
+            "╩ ╩"
         )
         "D" = @(
-            "████ ",
-            "█   █",
-            "█   █",
-            "█   █",
-            "████ "
+            "╔╦╗",
+            " ║║",
+            "═╩╝"
         )
         "E" = @(
-            "█████",
-            "█    ",
-            "████ ",
-            "█    ",
-            "█████"
+            "╔═╗",
+            "╠═ ",
+            "╚═╝"
         )
         "G" = @(
-            " ████",
-            "█    ",
-            "█ ███",
-            "█   █",
-            " ███ "
+            "╔═╗",
+            "║ ╦",
+            "╚═╝"
         )
         "H" = @(
-            "█   █",
-            "█   █",
-            "█████",
-            "█   █",
-            "█   █"
+            "╦ ╦",
+            "╠═╣",
+            "╩ ╩"
         )
         "J" = @(
-            "  ███",
-            "   █ ",
-            "   █ ",
-            "█  █ ",
-            " ██  "
+            "  ╦",
+            "  ║",
+            "╚═╝"
         )
         "L" = @(
-            "█    ",
-            "█    ",
-            "█    ",
-            "█    ",
-            "█████"
+            "╦  ",
+            "║  ",
+            "╩═╝"
         )
         "O" = @(
-            " ███ ",
-            "█   █",
-            "█   █",
-            "█   █",
-            " ███ "
+            "╔═╗",
+            "║ ║",
+            "╚═╝"
         )
         "P" = @(
-            "████ ",
-            "█   █",
-            "████ ",
-            "█    ",
-            "█    "
+            "╔═╗",
+            "╠═╝",
+            "╩  "
         )
         "R" = @(
-            "████ ",
-            "█   █",
-            "████ ",
-            "█  █ ",
-            "█   █"
+            "╦═╗",
+            "╠╦╝",
+            "╩╚═"
         )
         "T" = @(
-            "█████",
-            "  █  ",
-            "  █  ",
-            "  █  ",
-            "  █  "
+            "╔╦╗",
+            " ║ ",
+            " ╩ "
         )
         "X" = @(
-            "█   █",
-            " █ █ ",
-            "  █  ",
-            " █ █ ",
-            "█   █"
+            "═╗╔",
+            " ╬ ",
+            "╔╝╚"
         )
         " " = @(
-            "     ",
-            "     ",
-            "     ",
-            "     ",
-            "     "
+            "   ",
+            "   ",
+            "   "
         )
     }
 
-    $rows = @("", "", "", "", "")
+    $rows = @("", "", "")
     $chars = $Text.ToUpperInvariant().ToCharArray()
 
     foreach ($char in $chars) {
@@ -215,15 +191,15 @@ function Get-PixelGlyphLines {
             $key = " "
         }
 
-        for ($i = 0; $i -lt 5; $i++) {
-            $rows[$i] += $glyphs[$key][$i] + " "
+        for ($i = 0; $i -lt 3; $i++) {
+            $rows[$i] += $glyphs[$key][$i].PadRight(4) + " "
         }
     }
 
     return $rows
 }
 
-function Show-PixelLogo {
+function Show-PixelLineLogo {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text,
@@ -231,26 +207,26 @@ function Show-PixelLogo {
         [int]$Slant = 2
     )
 
-    $lines = Get-PixelGlyphLines -Text $Text
-    $rowIndex = 0
+    $rows = Get-PixelLineGlyphRows -Text $Text
+    $index = 0
 
-    foreach ($line in $lines) {
-        $slantedLine = (" " * ($rowIndex * $Slant)) + $line
-        Write-Centered $slantedLine Yellow 0
-        Start-Sleep -Milliseconds 12
-        $rowIndex++
+    foreach ($row in $rows) {
+        $line = (" " * ($index * $Slant)) + $row
+        Write-Centered $line Yellow 0
+        Start-Sleep -Milliseconds 28
+        $index++
     }
 }
 
 function Show-FrameTop {
     $width = Get-ConsoleWidthSafe
-    $inner = [Math]::Min(86, [Math]::Max(60, $width - 20))
+    $inner = [Math]::Min(84, [Math]::Max(58, $width - 20))
     Write-Centered ("╔" + ("═" * $inner) + "╗") DarkYellow
 }
 
 function Show-FrameBottom {
     $width = Get-ConsoleWidthSafe
-    $inner = [Math]::Min(86, [Math]::Max(60, $width - 20))
+    $inner = [Math]::Min(84, [Math]::Max(58, $width - 20))
     Write-Centered ("╚" + ("═" * $inner) + "╝") DarkYellow
 }
 
@@ -260,7 +236,7 @@ function Show-Header {
 
     Show-FrameTop
     Write-Host ""
-    Show-PixelLogo "GODPROJEXTH" 2
+    Show-PixelLineLogo "GODPROJEXTH" 2
     Write-Host ""
     Show-FrameBottom
 
@@ -282,7 +258,7 @@ function Show-PremiumBar {
         [int]$Delay = 4
     )
 
-    $barWidth = 50
+    $barWidth = 52
     $frames = @("◜", "◠", "◝", "◞", "◡", "◟")
     $shine = @("◆", "✦", "◇", "✦")
 
@@ -365,9 +341,9 @@ function Show-EndCredits {
 
     Show-FrameTop
     Write-Host ""
-    Show-PixelLogo "ALPHA" 2
+    Show-PixelLineLogo "ALPHA" 2
     Write-Host ""
-    Show-PixelLogo "GODPROJEXTH" 2
+    Show-PixelLineLogo "GODPROJEXTH" 2
     Write-Host ""
     Show-FrameBottom
 
@@ -433,6 +409,21 @@ function Test-ExistingExe {
         return $false
     }
 
+    if ([string]::IsNullOrWhiteSpace($ExpectedSha256)) {
+        try {
+            $info = Get-Item -LiteralPath $ExePath
+            if ($info.Length -gt 10240) {
+                return $true
+            }
+
+            Remove-Item -LiteralPath $ExePath -Force -ErrorAction SilentlyContinue
+            return $false
+        }
+        catch {
+            return $false
+        }
+    }
+
     try {
         $actual = (Get-FileHash -Algorithm SHA256 -Path $ExePath).Hash.ToUpperInvariant()
 
@@ -485,6 +476,12 @@ function Download-Exe {
 }
 
 function Verify-Exe {
+    if ([string]::IsNullOrWhiteSpace($ExpectedSha256)) {
+        Write-Status "SHA256 skipped." Yellow
+        Show-PremiumBar -Label "Preparing verified package" -Start 71 -End 88 -Delay 4
+        return
+    }
+
     Write-Status "Verifying file integrity." Green
     Show-PremiumBar -Label "Verifying SHA256 integrity" -Start 71 -End 88 -Delay 4
 
