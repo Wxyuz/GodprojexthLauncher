@@ -105,7 +105,7 @@ function Write-Status {
     Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
 }
 
-function Get-PixelItalicGlyphLines {
+function Get-PixelGlyphLines {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text
@@ -113,95 +113,95 @@ function Get-PixelItalicGlyphLines {
 
     $glyphs = @{
         "A" = @(
-            "  ▓▓  ",
-            " ▓  ▓ ",
-            "▓▓▓▓▓▓",
-            "▓    ▓",
-            "▓    ▓"
+            " ███ ",
+            "█   █",
+            "█████",
+            "█   █",
+            "█   █"
         )
         "D" = @(
-            "▓▓▓▓  ",
-            "▓   ▓ ",
-            "▓    ▓",
-            "▓   ▓ ",
-            "▓▓▓▓  "
+            "████ ",
+            "█   █",
+            "█   █",
+            "█   █",
+            "████ "
         )
         "E" = @(
-            "▓▓▓▓▓▓",
-            "▓     ",
-            "▓▓▓▓▓ ",
-            "▓     ",
-            "▓▓▓▓▓▓"
+            "█████",
+            "█    ",
+            "████ ",
+            "█    ",
+            "█████"
         )
         "G" = @(
-            " ▓▓▓▓▓",
-            "▓     ",
-            "▓  ▓▓▓",
-            "▓    ▓",
-            " ▓▓▓▓ "
+            " ████",
+            "█    ",
+            "█ ███",
+            "█   █",
+            " ███ "
         )
         "H" = @(
-            "▓    ▓",
-            "▓    ▓",
-            "▓▓▓▓▓▓",
-            "▓    ▓",
-            "▓    ▓"
+            "█   █",
+            "█   █",
+            "█████",
+            "█   █",
+            "█   █"
         )
         "J" = @(
-            "   ▓▓▓",
-            "    ▓ ",
-            "    ▓ ",
-            "▓   ▓ ",
-            " ▓▓▓  "
+            "  ███",
+            "   █ ",
+            "   █ ",
+            "█  █ ",
+            " ██  "
         )
         "L" = @(
-            "▓     ",
-            "▓     ",
-            "▓     ",
-            "▓     ",
-            "▓▓▓▓▓▓"
+            "█    ",
+            "█    ",
+            "█    ",
+            "█    ",
+            "█████"
         )
         "O" = @(
-            " ▓▓▓▓ ",
-            "▓    ▓",
-            "▓    ▓",
-            "▓    ▓",
-            " ▓▓▓▓ "
+            " ███ ",
+            "█   █",
+            "█   █",
+            "█   █",
+            " ███ "
         )
         "P" = @(
-            "▓▓▓▓▓ ",
-            "▓    ▓",
-            "▓▓▓▓▓ ",
-            "▓     ",
-            "▓     "
+            "████ ",
+            "█   █",
+            "████ ",
+            "█    ",
+            "█    "
         )
         "R" = @(
-            "▓▓▓▓▓ ",
-            "▓    ▓",
-            "▓▓▓▓▓ ",
-            "▓   ▓ ",
-            "▓    ▓"
+            "████ ",
+            "█   █",
+            "████ ",
+            "█  █ ",
+            "█   █"
         )
         "T" = @(
-            "▓▓▓▓▓▓",
-            "  ▓   ",
-            "  ▓   ",
-            "  ▓   ",
-            "  ▓   "
+            "█████",
+            "  █  ",
+            "  █  ",
+            "  █  ",
+            "  █  "
         )
         "X" = @(
-            "▓    ▓",
-            " ▓  ▓ ",
-            "  ▓▓  ",
-            " ▓  ▓ ",
-            "▓    ▓"
+            "█   █",
+            " █ █ ",
+            "  █  ",
+            " █ █ ",
+            "█   █"
         )
         " " = @(
-            "      ",
-            "      ",
-            "      ",
-            "      ",
-            "      "
+            "     ",
+            "     ",
+            "     ",
+            "     ",
+            "     "
         )
     }
 
@@ -223,7 +223,7 @@ function Get-PixelItalicGlyphLines {
     return $rows
 }
 
-function Show-PixelItalicLogo {
+function Show-PixelLogo {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text,
@@ -231,13 +231,13 @@ function Show-PixelItalicLogo {
         [int]$Slant = 2
     )
 
-    $lines = Get-PixelItalicGlyphLines -Text $Text
+    $lines = Get-PixelGlyphLines -Text $Text
     $rowIndex = 0
 
     foreach ($line in $lines) {
         $slantedLine = (" " * ($rowIndex * $Slant)) + $line
         Write-Centered $slantedLine Yellow 0
-        Start-Sleep -Milliseconds 14
+        Start-Sleep -Milliseconds 12
         $rowIndex++
     }
 }
@@ -260,7 +260,7 @@ function Show-Header {
 
     Show-FrameTop
     Write-Host ""
-    Show-PixelItalicLogo "GODPROJEXTH" 2
+    Show-PixelLogo "GODPROJEXTH" 2
     Write-Host ""
     Show-FrameBottom
 
@@ -365,9 +365,9 @@ function Show-EndCredits {
 
     Show-FrameTop
     Write-Host ""
-    Show-PixelItalicLogo "ALPHA" 2
+    Show-PixelLogo "ALPHA" 2
     Write-Host ""
-    Show-PixelItalicLogo "GODPROJEXTH" 2
+    Show-PixelLogo "GODPROJEXTH" 2
     Write-Host ""
     Show-FrameBottom
 
