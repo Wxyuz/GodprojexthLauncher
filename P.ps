@@ -27,7 +27,7 @@ function Set-ConsoleLook {
     }
 }
 
-function Write-TypeText {
+function Write-SlowText {
     param(
         [string]$Text,
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
@@ -42,18 +42,18 @@ function Write-TypeText {
     Write-Host ""
 }
 
-function Write-StatusTyped {
+function Write-GodStatus {
     param(
         [string]$Text,
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-        [int]$Delay = 18
+        [int]$Delay = 14
     )
 
     Write-Host "   " -NoNewline
-    Write-TypeText "[GODPROJEXTH] $Text" $Color $Delay
+    Write-SlowText "[GODPROJEXTH] $Text" $Color $Delay
 }
 
-function Show-Header {
+function Show-GodHeader {
     Clear-Host
     Write-Host ""
 
@@ -68,36 +68,63 @@ function Show-Header {
 
     foreach ($line in $logo) {
         Write-Host $line -ForegroundColor Yellow
-        Start-Sleep -Milliseconds 60
+        Start-Sleep -Milliseconds 65
     }
 
     Write-Host ""
-    Write-TypeText "   GODPROJEXTH PREMIUM RUNNER" Yellow 35
-    Write-TypeText "   PowerShell  ->  Secure Connect  ->  Premium Load  ->  Open Interface" DarkYellow 18
+    Write-SlowText "   GODPROJEXTH PREMIUM RUNNER" Yellow 35
+    Write-SlowText "   Secure Connect  ->  Premium Load  ->  Open Interface" DarkYellow 20
     Write-Host ""
 }
 
-function Show-Loader {
+function Show-PremiumLoader {
     param(
         [string]$Text,
         [int]$From,
         [int]$To,
-        [int]$Delay = 24
+        [int]$Delay = 26
     )
 
-    $barWidth = 44
+    $barWidth = 46
 
     for ($i = $From; $i -le $To; $i++) {
-        $filled = [math]::Floor(($i / 100) * $barWidth)
+        $filled = [Math]::Floor(($i / 100) * $barWidth)
         $empty = $barWidth - $filled
 
-        $bar = ("█" * $filled) + ("░" * $empty)
+        $leftGlow = "▓" * $filled
+        $rightDim = "░" * $empty
+        $bar = $leftGlow + $rightDim
 
-        Write-Host "`r   $Text [$bar] $i%" -NoNewline -ForegroundColor Yellow
+        $spark = @("✦", "✧", "◆", "◇")[$i % 4]
+
+        Write-Host "`r   $spark $Text [$bar] $i%" -NoNewline -ForegroundColor Yellow
         Start-Sleep -Milliseconds $Delay
     }
 
     Write-Host ""
+}
+
+function Show-AlphaCredit {
+    Clear-Host
+    Write-Host ""
+
+    $credit = @(
+"      █████╗ ██╗     ██████╗ ██╗  ██╗ █████╗      ██████╗  ██████╗ ██████╗ ██████╗  ██████╗      ██╗███████╗██╗  ██╗████████╗██╗  ██╗",
+"     ██╔══██╗██║     ██╔══██╗██║  ██║██╔══██╗    ██╔════╝ ██╔═══██╗██╔══██╗██╔══██╗██╔═══██╗     ██║██╔════╝╚██╗██╔╝╚══██╔══╝██║  ██║",
+"     ███████║██║     ██████╔╝███████║███████║    ██║  ███╗██║   ██║██║  ██║██████╔╝██║   ██║     ██║█████╗   ╚███╔╝    ██║   ███████║",
+"     ██╔══██║██║     ██╔═══╝ ██╔══██║██╔══██║    ██║   ██║██║   ██║██║  ██║██╔═══╝ ██║   ██║██   ██║██╔══╝   ██╔██╗    ██║   ██╔══██║",
+"     ██║  ██║███████╗██║     ██║  ██║██║  ██║    ╚██████╔╝╚██████╔╝██████╔╝██║     ╚██████╔╝╚█████╔╝███████╗██╔╝ ██╗   ██║   ██║  ██║",
+"     ╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝     ╚═════╝  ╚═════╝ ╚═════╝ ╚═╝      ╚═════╝  ╚════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝"
+    )
+
+    foreach ($line in $credit) {
+        Write-Host $line -ForegroundColor Yellow
+        Start-Sleep -Milliseconds 80
+    }
+
+    Write-Host ""
+    Write-SlowText "   PREMIUM INTERFACE READY..." Yellow 30
+    Start-Sleep -Milliseconds 650
 }
 
 function Ensure-Folder {
@@ -140,7 +167,7 @@ function Get-LatestReleaseAssetUrl {
         return $asset.browser_download_url
     }
     catch {
-        throw "Cannot find release asset. Make sure the file is uploaded in GitHub Release Assets and click Update release."
+        throw "Cannot find release asset. Upload the interface file to GitHub Release Assets and click Update release."
     }
 }
 
@@ -163,7 +190,6 @@ function Find-PythonRuntime {
                     [void]$candidates.Add(@{
                         File = $localPython.FullName
                         Args = @()
-                        UseWindowed = $false
                     })
                 }
             }
@@ -177,7 +203,6 @@ function Find-PythonRuntime {
         [void]$candidates.Add(@{
             File = $py.Source
             Args = @("-3")
-            UseWindowed = $false
         })
     }
 
@@ -186,7 +211,6 @@ function Find-PythonRuntime {
         [void]$candidates.Add(@{
             File = $python.Source
             Args = @()
-            UseWindowed = $false
         })
     }
 
@@ -221,7 +245,6 @@ function Get-WindowedRuntime {
                 return @{
                     File = $pythonw
                     Args = @()
-                    UseWindowed = $true
                 }
             }
         }
@@ -232,7 +255,6 @@ function Get-WindowedRuntime {
             return @{
                 File = $pyw.Source
                 Args = @("-3")
-                UseWindowed = $true
             }
         }
     }
@@ -245,13 +267,13 @@ function Get-WindowedRuntime {
 function Download-Payload {
     Ensure-Folder -Path $InstallDir
 
-    Write-StatusTyped "Connecting to premium server..." Yellow 22
-    Show-Loader -Text "Secure connecting        " -From 1 -To 18 -Delay 28
+    Write-GodStatus "Connecting to premium server..." Yellow 22
+    Show-PremiumLoader -Text "Secure connect        " -From 1 -To 20 -Delay 34
 
     $downloadUrl = Get-LatestReleaseAssetUrl
 
-    Write-StatusTyped "Server authenticated." Green 18
-    Show-Loader -Text "Preparing interface      " -From 19 -To 32 -Delay 26
+    Write-GodStatus "Connection authenticated." Green 18
+    Show-PremiumLoader -Text "Preparing data        " -From 21 -To 40 -Delay 30
 
     try {
         Invoke-WebRequest -Uri $downloadUrl -OutFile $PayloadPath -UseBasicParsing
@@ -260,7 +282,7 @@ function Download-Payload {
         throw "Download failed. Check GitHub Release asset and click Update release."
     }
 
-    Show-Loader -Text "Loading premium data     " -From 33 -To 55 -Delay 24
+    Show-PremiumLoader -Text "Loading interface     " -From 41 -To 60 -Delay 28
 
     if (-not (Test-Path -LiteralPath $PayloadPath)) {
         throw "Download finished but payload was not found."
@@ -317,19 +339,18 @@ function Install-PythonPackage {
 function Install-GuiDependencies {
     param($Runtime)
 
-    Write-StatusTyped "Checking premium engine..." Yellow 20
-    Show-Loader -Text "Checking engine          " -From 56 -To 70 -Delay 24
+    Write-GodStatus "Checking premium engine..." Yellow 20
+    Show-PremiumLoader -Text "Checking engine       " -From 61 -To 76 -Delay 26
 
     foreach ($module in $RequiredModules) {
         $importName = $module.ImportName
         $packageName = $module.PackageName
 
         if (Test-PythonModule -Runtime $Runtime -ImportName $importName) {
-            Write-StatusTyped "$packageName ready." Green 10
             continue
         }
 
-        Write-StatusTyped "Installing $packageName..." Yellow 10
+        Write-GodStatus "Installing engine component..." Yellow 10
         Install-PythonPackage -Runtime $Runtime -PackageName $packageName
     }
 }
@@ -337,8 +358,8 @@ function Install-GuiDependencies {
 function Start-Interface {
     param($Runtime)
 
-    Write-StatusTyped "Opening interface..." Yellow 24
-    Show-Loader -Text "Opening interface        " -From 71 -To 100 -Delay 22
+    Write-GodStatus "Opening premium interface..." Yellow 22
+    Show-PremiumLoader -Text "Opening interface     " -From 77 -To 100 -Delay 24
 
     $windowed = Get-WindowedRuntime -Runtime $Runtime
 
@@ -349,9 +370,21 @@ function Start-Interface {
     Start-Process -FilePath $windowed.File -ArgumentList $args -WorkingDirectory $InstallDir
 }
 
+function Close-RunnerWindow {
+    Start-Sleep -Milliseconds 700
+
+    try {
+        [Console]::CursorVisible = $true
+    }
+    catch {
+    }
+
+    Stop-Process -Id $PID -Force
+}
+
 try {
     Set-ConsoleLook
-    Show-Header
+    Show-GodHeader
 
     $runtime = Find-PythonRuntime
 
@@ -359,17 +392,14 @@ try {
         throw "Python 3 not found. Install Python 3 first. Avoid Microsoft Store alias."
     }
 
-    Write-StatusTyped "Premium engine found." Green 20
+    Write-GodStatus "Premium engine found." Green 20
 
     Download-Payload
     Install-GuiDependencies -Runtime $runtime
+    Show-AlphaCredit
     Start-Interface -Runtime $runtime
 
-    Write-Host ""
-    Write-StatusTyped "Successfully launched." Green 22
-
-    Start-Sleep -Milliseconds 900
-    exit 0
+    Close-RunnerWindow
 }
 catch {
     try {
@@ -384,11 +414,4 @@ catch {
     Write-Host ""
     Write-Host "   Press Enter to close..." -ForegroundColor Yellow
     [void][System.Console]::ReadLine()
-}
-finally {
-    try {
-        [Console]::CursorVisible = $true
-    }
-    catch {
-    }
 }
