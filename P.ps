@@ -27,36 +27,11 @@ function Initialize-Console {
 
     try {
         $Host.UI.RawUI.WindowTitle = "GODPROJEXTH PREMIUM RUNNER"
-
-        $currentBuffer = $Host.UI.RawUI.BufferSize
-        $currentWindow = $Host.UI.RawUI.WindowSize
-
-        $targetWidth = 118
-        $targetHeight = 34
-
-        if ($currentBuffer.Width -lt $targetWidth) {
-            $Host.UI.RawUI.BufferSize = New-Object System.Management.Automation.Host.Size($targetWidth, [Math]::Max($currentBuffer.Height, 3000))
-        }
-
-        if ($currentWindow.Width -lt 100) {
-            $safeWidth = [Math]::Min($targetWidth, $Host.UI.RawUI.MaxPhysicalWindowSize.Width)
-            $safeHeight = [Math]::Min($targetHeight, $Host.UI.RawUI.MaxPhysicalWindowSize.Height)
-            $Host.UI.RawUI.WindowSize = New-Object System.Management.Automation.Host.Size($safeWidth, $safeHeight)
-        }
     }
     catch {
     }
 
     Clear-Host
-}
-
-function Get-ConsoleWidthSafe {
-    try {
-        return [Math]::Max(80, $Host.UI.RawUI.WindowSize.Width)
-    }
-    catch {
-        return 100
-    }
 }
 
 function Write-Typed {
@@ -103,203 +78,58 @@ function Write-Status {
     Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
 }
 
-function Write-Centered {
+function Write-ArtLine {
     param(
         [string]$Text,
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-        [int]$Delay = 0
-    )
-
-    $width = Get-ConsoleWidthSafe
-    $left = [Math]::Max(0, [Math]::Floor(($width - $Text.Length) / 2))
-    $line = (" " * $left) + $Text
-
-    if ($Delay -le 0) {
-        Write-Host $line -ForegroundColor $Color
-    }
-    else {
-        foreach ($char in $line.ToCharArray()) {
-            Write-Host $char -NoNewline -ForegroundColor $Color
-            Start-Sleep -Milliseconds $Delay
-        }
-        Write-Host ""
-    }
-}
-
-function Get-BigTextLines {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Text
-    )
-
-    $glyphs = @{
-        "A" = @(
-            "  █  ",
-            " █ █ ",
-            "█████",
-            "█   █",
-            "█   █"
-        )
-        "D" = @(
-            "████ ",
-            "█   █",
-            "█   █",
-            "█   █",
-            "████ "
-        )
-        "E" = @(
-            "█████",
-            "█    ",
-            "████ ",
-            "█    ",
-            "█████"
-        )
-        "G" = @(
-            " ████",
-            "█    ",
-            "█ ███",
-            "█   █",
-            " ███ "
-        )
-        "H" = @(
-            "█   █",
-            "█   █",
-            "█████",
-            "█   █",
-            "█   █"
-        )
-        "J" = @(
-            "  ███",
-            "   █ ",
-            "   █ ",
-            "█  █ ",
-            " ██  "
-        )
-        "L" = @(
-            "█    ",
-            "█    ",
-            "█    ",
-            "█    ",
-            "█████"
-        )
-        "O" = @(
-            " ███ ",
-            "█   █",
-            "█   █",
-            "█   █",
-            " ███ "
-        )
-        "P" = @(
-            "████ ",
-            "█   █",
-            "████ ",
-            "█    ",
-            "█    "
-        )
-        "R" = @(
-            "████ ",
-            "█   █",
-            "████ ",
-            "█  █ ",
-            "█   █"
-        )
-        "T" = @(
-            "█████",
-            "  █  ",
-            "  █  ",
-            "  █  ",
-            "  █  "
-        )
-        "X" = @(
-            "█   █",
-            " █ █ ",
-            "  █  ",
-            " █ █ ",
-            "█   █"
-        )
-        " " = @(
-            "     ",
-            "     ",
-            "     ",
-            "     ",
-            "     "
-        )
-    }
-
-    $result = @("", "", "", "", "")
-    $chars = $Text.ToUpperInvariant().ToCharArray()
-
-    foreach ($char in $chars) {
-        $key = [string]$char
-
-        if (-not $glyphs.ContainsKey($key)) {
-            $key = " "
-        }
-
-        for ($i = 0; $i -lt 5; $i++) {
-            $result[$i] += $glyphs[$key][$i] + " "
-        }
-    }
-
-    return $result
-}
-
-function Write-BigText {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Text,
-
-        [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-
         [int]$Delay = 2
     )
 
-    $lines = Get-BigTextLines -Text $Text
-
-    foreach ($line in $lines) {
-        Write-Centered $line $Color $Delay
-        Start-Sleep -Milliseconds 35
+    foreach ($char in $Text.ToCharArray()) {
+        Write-Host $char -NoNewline -ForegroundColor $Color
+        Start-Sleep -Milliseconds $Delay
     }
-}
 
-function Write-PremiumDivider {
-    param(
-        [System.ConsoleColor]$Color = [System.ConsoleColor]::DarkYellow
-    )
-
-    $width = Get-ConsoleWidthSafe
-    $inner = [Math]::Min(86, [Math]::Max(58, $width - 16))
-    $line = "═" * $inner
-    Write-Centered "╔$line╗" $Color 0
-}
-
-function Write-PremiumDividerBottom {
-    param(
-        [System.ConsoleColor]$Color = [System.ConsoleColor]::DarkYellow
-    )
-
-    $width = Get-ConsoleWidthSafe
-    $inner = [Math]::Min(86, [Math]::Max(58, $width - 16))
-    $line = "═" * $inner
-    Write-Centered "╚$line╝" $Color 0
+    Write-Host ""
 }
 
 function Show-GodprojexthArt {
-    Write-PremiumDivider
-    Write-Host ""
-    Write-BigText "GODPROJEXTH" Yellow 1
-    Write-Host ""
-    Write-PremiumDividerBottom
+    $art = @(
+"      ╭────────────────────────────────────────────────────────────────────────╮",
+"      │  ╭━━╮ ╭━━╮ ╭━━╮ ╭━━╮ ╭━━╮ ╭━━╮    ╭╮ ╭━━╮ ╭╮ ╭╮ ╭━━━━╮ ╭╮  ╭╮       │",
+"      │  ┃╭━╯ ┃╭╮┃ ┃╭╮┃ ┃╭╮┃ ┃╭━╯ ┃╭╮┃    ┃┃ ┃╭━╯ ╰╲╱╯ ╰━╮╭━╯ ┃┃  ┃┃       │",
+"      │  ┃┃╭╮ ┃┃┃┃ ┃┃┃┃ ┃╰╯┃ ┃╰━╮ ┃┃┃┃    ┃┃ ┃╰━╮  ╱╲    ┃┃   ┃╰━━╯┃       │",
+"      │  ┃╰╯┃ ┃╰╯┃ ┃╰╯┃ ┃╭━╯ ┃╭━╯ ┃╰╯┃ ╭╮ ┃┃ ┃╭━╯ ╱╲╲    ┃┃   ┃╭━━╮┃       │",
+"      │  ╰━━╯ ╰━━╯ ╰━━╯ ╰╯   ╰╯   ╰━━╯ ╰━━╯ ╰━━╯ ╰╯ ╰╯   ╰╯   ╰╯  ╰╯       │",
+"      ╰────────────────────────────────────────────────────────────────────────╯"
+    )
+
+    foreach ($line in $art) {
+        Write-ArtLine $line Yellow 2
+        Start-Sleep -Milliseconds 42
+    }
 }
 
 function Show-AlphaGodprojexthArt {
-    Write-PremiumDivider
-    Write-Host ""
-    Write-BigText "ALPHA" Yellow 1
-    Write-Host ""
-    Write-BigText "GODPROJEXTH" Yellow 1
-    Write-Host ""
-    Write-PremiumDividerBottom
+    $art = @(
+"      ╭────────────────────────────────────────────────────────────────────────────╮",
+"      │  ╭━━╮ ╭╮    ╭━━╮ ╭╮ ╭╮ ╭━━╮     ╭━━╮ ╭━━╮ ╭━━╮ ╭━━╮ ╭━━╮ ╭━━╮           │",
+"      │  ┃╭╮┃ ┃┃    ┃╭╮┃ ┃┃ ┃┃ ┃╭╮┃     ┃╭━╯ ┃╭╮┃ ┃╭╮┃ ┃╭╮┃ ┃╭━╯ ┃╭╮┃           │",
+"      │  ┃╰╯┃ ┃┃    ┃╰╯┃ ┃╰━╯┃ ┃╰╯┃     ┃┃╭╮ ┃┃┃┃ ┃┃┃┃ ┃╰╯┃ ┃╰━╮ ┃┃┃┃           │",
+"      │  ┃╭╮┃ ┃┃    ┃╭━╯ ┃╭━╮┃ ┃╭╮┃     ┃╰╯┃ ┃╰╯┃ ┃╰╯┃ ┃╭━╯ ┃╭━╯ ┃╰╯┃           │",
+"      │  ╰╯╰╯ ╰━━╯ ╰╯   ╰╯ ╰╯ ╰╯╰╯     ╰━━╯ ╰━━╯ ╰━━╯ ╰╯   ╰╯   ╰━━╯           │",
+"      │                                                                            │",
+"      │                       ╭╮ ╭━━╮ ╭╮ ╭╮ ╭━━━━╮ ╭╮  ╭╮                         │",
+"      │                       ┃┃ ┃╭━╯ ╰╲╱╯ ╰━╮╭━╯ ┃┃  ┃┃                         │",
+"      │                   ╭╮  ┃┃ ┃╰━╮  ╱╲    ┃┃   ┃╰━━╯┃                         │",
+"      │                   ╰━━━╯ ╰━━╯ ╰╯ ╰╯   ╰╯   ╰╯  ╰╯                         │",
+"      ╰────────────────────────────────────────────────────────────────────────────╯"
+    )
+
+    foreach ($line in $art) {
+        Write-ArtLine $line Yellow 2
+        Start-Sleep -Milliseconds 40
+    }
 }
 
 function Show-Header {
@@ -307,8 +137,8 @@ function Show-Header {
     Write-Host ""
     Show-GodprojexthArt
     Write-Host ""
-    Write-Centered "GODPROJEXTH PREMIUM RUNNER" Yellow 18
-    Write-Centered "Secure Load  ->  Premium Connect  ->  Open Interface" DarkYellow 12
+    Write-TypedLine "PREMIUM RUNNER INITIALIZED" Yellow 24
+    Write-TypedLine "Secure Load  ->  Premium Connect  ->  Open Interface" DarkYellow 18
     Write-Host ""
 }
 
@@ -324,12 +154,12 @@ function Show-PremiumBar {
         [int]$Delay = 28
     )
 
-    $barWidth = 46
+    $barWidth = 44
     $frames = @("◜", "◠", "◝", "◞", "◡", "◟")
     $pulse = @("◇", "◆", "✦", "◆")
 
-    Write-Host ""
-    Write-Centered $Label Yellow 12
+    Write-Host "   " -NoNewline
+    Write-Typed $Label Yellow 12
 
     for ($i = $Start; $i -le $End; $i++) {
         $filled = [Math]::Floor(($i / 100) * $barWidth)
@@ -358,12 +188,7 @@ function Show-PremiumBar {
             $state = "FINALIZING"
         }
 
-        $width = Get-ConsoleWidthSafe
-        $visualLength = $barWidth + 28
-        $left = [Math]::Max(0, [Math]::Floor(($width - $visualLength) / 2))
-
-        Write-Host "`r" -NoNewline
-        Write-Host (" " * $left) -NoNewline
+        Write-Host "`r   " -NoNewline
         Write-Host "$spin " -NoNewline -ForegroundColor White
         Write-Host "╞" -NoNewline -ForegroundColor DarkYellow
         Write-Host $fillText -NoNewline -ForegroundColor Yellow
@@ -387,8 +212,9 @@ function Show-CreditLine {
         [string]$Value
     )
 
-    $line = ("{0,-8} : {1}" -f $Name, $Value)
-    Write-Centered $line Yellow 14
+    Write-Host "      │  " -NoNewline -ForegroundColor DarkYellow
+    Write-Typed ($Name.PadRight(8) + " : ") DarkYellow 12 -NoNewLine
+    Write-Typed $Value Yellow 16
 }
 
 function Show-EndCredits {
@@ -397,17 +223,17 @@ function Show-EndCredits {
     Show-AlphaGodprojexthArt
     Write-Host ""
 
-    Write-Centered "PREMIUM INTERFACE READY..." Yellow 16
+    Write-TypedLine "PREMIUM INTERFACE READY..." Yellow 20
     Write-Host ""
 
     Show-PremiumBar -Label "Finalizing premium interface" -Start 90 -End 100 -Delay 42
 
-    Write-Centered "╭────────────────────────────────────────────╮" DarkYellow 0
+    Write-Host "      ╭────────────────────────────────────────────╮" -ForegroundColor DarkYellow
     Show-CreditLine "WEBSITE" "GODPROJEXTH"
     Show-CreditLine "YOUTUBE" "GODPROJEXTH"
     Show-CreditLine "TIKTOK" "GODPROJEXTH"
     Show-CreditLine "DISCORD" "GODPROJEXTH"
-    Write-Centered "╰────────────────────────────────────────────╯" DarkYellow 0
+    Write-Host "      ╰────────────────────────────────────────────╯" -ForegroundColor DarkYellow
     Write-Host ""
 
     Start-Sleep -Milliseconds 900
