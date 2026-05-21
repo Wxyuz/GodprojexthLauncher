@@ -10,8 +10,8 @@ $ExeFileName = "POWERSHELLGODPROJEXTH.exe"
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthPremium"
 $ExePath = Join-Path $InstallDir $ExeFileName
 
-# ถ้าอยากล็อกไฟล์ EXE ให้ใส่ SHA256 ตรงนี้
-# ถ้าปล่อยว่าง จะไม่เช็ค SHA256 เพื่อไม่ให้ error เวลาอัปเดตไฟล์ใหม่
+# ถ้าต้องการล็อกไฟล์ให้ปลอดภัยมากขึ้น ให้ใส่ SHA256 ของ EXE ตรงนี้
+# ถ้าปล่อยว่าง จะไม่เช็ค SHA256 และจะใช้งานง่ายกว่าเวลาอัปเดตไฟล์ใหม่
 $ExpectedSha256 = ""
 
 function Initialize-Console {
@@ -59,11 +59,8 @@ function Write-Typed {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text,
-
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-
         [int]$Delay = 2,
-
         [switch]$NoNewLine
     )
 
@@ -107,142 +104,42 @@ function Write-Status {
     Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
 }
 
-function Get-PixelLineGlyphRows {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Text
-    )
-
-    $glyphs = @{
-        "A" = @(
-            "╔═╗",
-            "╠═╣",
-            "╩ ╩"
-        )
-        "D" = @(
-            "╔╦╗",
-            " ║║",
-            "═╩╝"
-        )
-        "E" = @(
-            "╔═╗",
-            "╠═ ",
-            "╚═╝"
-        )
-        "G" = @(
-            "╔═╗",
-            "║ ╦",
-            "╚═╝"
-        )
-        "H" = @(
-            "╦ ╦",
-            "╠═╣",
-            "╩ ╩"
-        )
-        "J" = @(
-            "  ╦",
-            "  ║",
-            "╚═╝"
-        )
-        "L" = @(
-            "╦  ",
-            "║  ",
-            "╩═╝"
-        )
-        "O" = @(
-            "╔═╗",
-            "║ ║",
-            "╚═╝"
-        )
-        "P" = @(
-            "╔═╗",
-            "╠═╝",
-            "╩  "
-        )
-        "R" = @(
-            "╦═╗",
-            "╠╦╝",
-            "╩╚═"
-        )
-        "T" = @(
-            "╔╦╗",
-            " ║ ",
-            " ╩ "
-        )
-        "X" = @(
-            "═╗╔",
-            " ╬ ",
-            "╔╝╚"
-        )
-        " " = @(
-            "   ",
-            "   ",
-            "   "
-        )
-    }
-
-    $rows = @("", "", "")
-    $chars = $Text.ToUpperInvariant().ToCharArray()
-
-    foreach ($char in $chars) {
-        $key = [string]$char
-
-        if (-not $glyphs.ContainsKey($key)) {
-            $key = " "
-        }
-
-        for ($i = 0; $i -lt 3; $i++) {
-            $rows[$i] += $glyphs[$key][$i].PadRight(4) + " "
-        }
-    }
-
-    return $rows
-}
-
-function Show-PixelLineLogo {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Text,
-
-        [int]$Slant = 2
-    )
-
-    $rows = Get-PixelLineGlyphRows -Text $Text
-    $index = 0
-
-    foreach ($row in $rows) {
-        $line = (" " * ($index * $Slant)) + $row
-        Write-Centered $line Yellow 0
-        Start-Sleep -Milliseconds 28
-        $index++
-    }
-}
-
-function Show-FrameTop {
-    $width = Get-ConsoleWidthSafe
-    $inner = [Math]::Min(84, [Math]::Max(58, $width - 20))
-    Write-Centered ("╔" + ("═" * $inner) + "╗") DarkYellow
-}
-
-function Show-FrameBottom {
-    $width = Get-ConsoleWidthSafe
-    $inner = [Math]::Min(84, [Math]::Max(58, $width - 20))
-    Write-Centered ("╚" + ("═" * $inner) + "╝") DarkYellow
-}
-
 function Show-Header {
     Clear-Host
     Write-Host ""
-
-    Show-FrameTop
-    Write-Host ""
-    Show-PixelLineLogo "GODPROJEXTH" 2
-    Write-Host ""
-    Show-FrameBottom
-
+    Write-Centered "╔════════════════════════════════════════════════════════════════════════════╗" DarkYellow
+    Write-Centered "║                                                                        ║" DarkYellow
+    Write-Centered "║     ██████╗  ██████╗ ██████╗ ██████╗  ██████╗      ██╗███████╗       ║" Yellow
+    Write-Centered "║    ██╔════╝ ██╔═══██╗██╔══██╗██╔══██╗██╔═══██╗     ██║██╔════╝       ║" Yellow
+    Write-Centered "║    ██║  ███╗██║   ██║██║  ██║██████╔╝██║   ██║     ██║█████╗         ║" Yellow
+    Write-Centered "║    ██║   ██║██║   ██║██║  ██║██╔═══╝ ██║   ██║██   ██║██╔══╝         ║" Yellow
+    Write-Centered "║    ╚██████╔╝╚██████╔╝██████╔╝██║     ╚██████╔╝╚█████╔╝███████╗       ║" Yellow
+    Write-Centered "║     ╚═════╝  ╚═════╝ ╚═════╝ ╚═╝      ╚═════╝  ╚════╝ ╚══════╝       ║" Yellow
+    Write-Centered "║                                                                        ║" DarkYellow
+    Write-Centered "║                       G O D P R O J E X T H                            ║" Yellow
+    Write-Centered "║                                                                        ║" DarkYellow
+    Write-Centered "╚════════════════════════════════════════════════════════════════════════════╝" DarkYellow
     Write-Host ""
     Write-Centered "GODPROJEXTH PREMIUM RUNNER" Yellow 2
-    Write-Centered "GitHub Release  ->  Verify File  ->  Open Interface" DarkYellow 2
+    Write-Centered "GitHub Release  ->  Download EXE  ->  Verify File  ->  Open Interface" DarkYellow 2
+    Write-Host ""
+}
+
+function Show-EndLogo {
+    Clear-Host
+    Write-Host ""
+    Write-Centered "╔════════════════════════════════════════════════════════════════════════════╗" DarkYellow
+    Write-Centered "║                                                                        ║" DarkYellow
+    Write-Centered "║        █████╗ ██╗     ██████╗ ██╗  ██╗ █████╗                         ║" Yellow
+    Write-Centered "║       ██╔══██╗██║     ██╔══██╗██║  ██║██╔══██╗                        ║" Yellow
+    Write-Centered "║       ███████║██║     ██████╔╝███████║███████║                        ║" Yellow
+    Write-Centered "║       ██╔══██║██║     ██╔═══╝ ██╔══██║██╔══██║                        ║" Yellow
+    Write-Centered "║       ██║  ██║███████╗██║     ██║  ██║██║  ██║                        ║" Yellow
+    Write-Centered "║       ╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝                        ║" Yellow
+    Write-Centered "║                                                                        ║" DarkYellow
+    Write-Centered "║                       G O D P R O J E X T H                            ║" Yellow
+    Write-Centered "║                                                                        ║" DarkYellow
+    Write-Centered "╚════════════════════════════════════════════════════════════════════════════╝" DarkYellow
     Write-Host ""
 }
 
@@ -250,11 +147,8 @@ function Show-PremiumBar {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Label,
-
         [int]$Start = 0,
-
         [int]$End = 100,
-
         [int]$Delay = 4
     )
 
@@ -290,7 +184,7 @@ function Show-PremiumBar {
         $state = "CONNECTING"
 
         if ($i -ge 35 -and $i -lt 70) {
-            $state = "LOADING"
+            $state = "DOWNLOADING"
         }
         elseif ($i -ge 70 -and $i -lt 100) {
             $state = "FINALIZING"
@@ -300,7 +194,7 @@ function Show-PremiumBar {
         }
 
         $width = Get-ConsoleWidthSafe
-        $visualLength = $barWidth + 32
+        $visualLength = $barWidth + 34
         $left = [Math]::Max(0, [Math]::Floor(($width - $visualLength) / 2))
 
         Write-Host "`r" -NoNewline
@@ -336,18 +230,8 @@ function Show-CreditLine {
 }
 
 function Show-EndCredits {
-    Clear-Host
-    Write-Host ""
+    Show-EndLogo
 
-    Show-FrameTop
-    Write-Host ""
-    Show-PixelLineLogo "ALPHA" 2
-    Write-Host ""
-    Show-PixelLineLogo "GODPROJEXTH" 2
-    Write-Host ""
-    Show-FrameBottom
-
-    Write-Host ""
     Write-Centered "PREMIUM INTERFACE READY" Yellow 2
 
     Show-PremiumBar -Label "Finalizing premium session" -Start 90 -End 100 -Delay 5
@@ -412,6 +296,7 @@ function Test-ExistingExe {
     if ([string]::IsNullOrWhiteSpace($ExpectedSha256)) {
         try {
             $info = Get-Item -LiteralPath $ExePath
+
             if ($info.Length -gt 10240) {
                 return $true
             }
