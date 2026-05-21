@@ -2,7 +2,6 @@ $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$AppName = "GODPROJEXTH"
 $RepoOwner = "Wxyuz"
 $RepoName = "GodprojexthLauncher"
 
@@ -265,74 +264,79 @@ function Ensure-InstallDir {
     }
 }
 
-function Get-AllReleaseAssets {
-    $releaseApi = "https://api.github.com/repos/$RepoOwner/$RepoName/releases"
+function Invoke-GitHubApi {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Uri
+    )
 
     $headers = @{
         "User-Agent" = "GODPROJEXTH"
         "Accept" = "application/vnd.github+json"
+        "Cache-Control" = "no-cache"
     }
 
+    return Invoke-RestMethod -Uri $Uri -Headers $headers -Method Get
+}
+
+function Get-LatestRelease {
+    $latestUri = "https://api.github.com/repos/$RepoOwner/$RepoName/releases/latest"
+
     try {
-        $releases = Invoke-RestMethod -Uri $releaseApi -Headers $headers -Method Get
+        return Invoke-GitHubApi -Uri $latestUri
+    }
+    catch {
+        throw "Cannot read latest release from GitHub. Make sure you clicked Update release and the repo is public."
+    }
+}
+
+function Get-AllReleases {
+    $releasesUri = "https://api.github.com/repos/$RepoOwner/$RepoName/releases?per_page=30"
+
+    try {
+        $releases = Invoke-GitHubApi -Uri $releasesUri
 
         if ($null -eq $releases) {
             return @()
         }
 
-        $allAssets = New-Object System.Collections.ArrayList
-
-        foreach ($release in $releases) {
-            if ($null -ne $release.assets) {
-                foreach ($asset in $release.assets) {
-                    [void]$allAssets.Add($asset)
-                }
-            }
-        }
-
-        return @($allAssets)
+        return @($releases)
     }
     catch {
         return @()
     }
 }
 
-function Get-LatestReleaseAssets {
-    $releaseApi = "https://api.github.com/repos/$RepoOwner/$RepoName/releases/latest"
-
-    $headers = @{
-        "User-Agent" = "GODPROJEXTH"
-        "Accept" = "application/vnd.github+json"
-    }
-
-    try {
-        $release = Invoke-RestMethod -Uri $releaseApi -Headers $headers -Method Get
-
-        if ($null -eq $release) {
-            return @()
-        }
-
-        if ($null -eq $release.assets) {
-            return @()
-        }
-
-        return @($release.assets)
-    }
-    catch {
-        return @()
-    }
-}
-
-function Select-ExeAssetFromList {
+function Get-AssetNamesText {
     param(
         [array]$Assets
     )
 
-    if ($null -eq $Assets) {
-        return $null
+    if ($null -eq $Assets -or $Assets.Count -eq 0) {
+        return "No uploaded release assets found."
     }
 
-    if ($Assets.Count -eq 0) {
+    $names = @()
+
+    foreach ($asset in $Assets) {
+        if ($null -ne $asset.name) {
+            $names += $asset.name
+        }
+    }
+
+    if ($names.Count -eq 0) {
+        return "No asset names found."
+    }
+
+    return ($names -join ", ")
+}
+
+function Select-ExeAssetFromAssets {
+    param(
+        [array]$Assets
+    )
+
+    if ($null -eq $Assets -or $Assets.Count -eq 0) {
         return $null
     }
 
@@ -342,7 +346,7 @@ function Select-ExeAssetFromList {
         return @{
             Url = $exact.browser_download_url
             Name = $exact.name
-            Source = "release-exact-name"
+            Source = "latest-release-exact"
         }
     }
 
@@ -353,42 +357,63 @@ function Select-ExeAssetFromList {
             return @{
                 Url = $match.browser_download_url
                 Name = $match.name
-                Source = "release-known-name"
+                Source = "latest-release-known"
             }
         }
     }
 
-    $exeAssets = @($Assets | Where-Object { $_.name -like "*.exe" })
+    $exeAssets = @($Assets | Where-Object { $_.name -match "\.exe$" })
 
     if ($exeAssets.Count -eq 1) {
         return @{
             Url = $exeAssets[0].browser_download_url
             Name = $exeAssets[0].name
-            Source = "release-single-exe"
+            Source = "latest-release-single-exe"
         }
     }
 
     if ($exeAssets.Count -gt 1) {
-        $names = ($exeAssets | ForEach-Object { $_.name }) -join ", "
-        throw "Found multiple EXE assets: $names. Keep only one EXE asset or rename your GUI to $PreferredExeName."
+        $names = Get-AssetNamesText -Assets $exeAssets
+        throw "Multiple EXE assets found: $names. Keep only one EXE asset or rename one to $PreferredExeName."
     }
 
     return $null
 }
 
-function Get-GitHubExeUrl {
-    $latestAssets = Get-LatestReleaseAssets
-    $latestSelection = Select-ExeAssetFromList -Assets $latestAssets
+function Get-GitHubExeInfo {
+    $latest = Get-LatestRelease
+    $latestAssets = @()
 
-    if ($null -ne $latestSelection) {
-        return $latestSelection
+    if ($null -ne $latest.assets) {
+        $latestAssets = @($latest.assets)
     }
 
-    $allAssets = Get-AllReleaseAssets
-    $allSelection = Select-ExeAssetFromList -Assets $allAssets
+    $selected = Select-ExeAssetFromAssets -Assets $latestAssets
 
-    if ($null -ne $allSelection) {
-        return $allSelection
+    if ($null -ne $selected) {
+        return $selected
+    }
+
+    $latestAssetNames = Get-AssetNamesText -Assets $latestAssets
+
+    $allReleases = Get-AllReleases
+
+    foreach ($release in $allReleases) {
+        $assets = @()
+
+        if ($null -ne $release.assets) {
+            $assets = @($release.assets)
+        }
+
+        $selectedFromRelease = Select-ExeAssetFromAssets -Assets $assets
+
+        if ($null -ne $selectedFromRelease) {
+            return @{
+                Url = $selectedFromRelease.Url
+                Name = $selectedFromRelease.Name
+                Source = "other-release"
+            }
+        }
     }
 
     foreach ($possibleName in $PossibleExeNames) {
@@ -400,14 +425,14 @@ function Get-GitHubExeUrl {
             return @{
                 Url = $rawUrl
                 Name = $possibleName
-                Source = "raw-main"
+                Source = "main-branch-raw"
             }
         }
         catch {
         }
     }
 
-    throw "EXE not found. Upload your GUI EXE to GitHub Release Assets. Recommended name: $PreferredExeName"
+    throw "EXE not found. Latest release assets: $latestAssetNames. Upload your GUI EXE to Latest Release Assets and rename it to $PreferredExeName."
 }
 
 function Test-ExistingExe {
@@ -462,7 +487,7 @@ function Download-Exe {
     Write-Status "Connecting to GitHub release." Green
     Show-PremiumBar -Label "Checking premium package" -Start 1 -End 28 -Delay 4
 
-    $exeInfo = Get-GitHubExeUrl
+    $exeInfo = Get-GitHubExeInfo
     $exeUrl = $exeInfo.Url
     $remoteName = $exeInfo.Name
     $sourceType = $exeInfo.Source
@@ -480,7 +505,7 @@ function Download-Exe {
         Invoke-WebRequest -Uri $exeUrl -OutFile $ExePath -UseBasicParsing
     }
     catch {
-        throw "Download failed. Check GitHub Release Asset or repository file."
+        throw "Download failed. Check GitHub Release asset or internet connection."
     }
 
     if (-not (Test-Path -LiteralPath $ExePath)) {
@@ -561,11 +586,13 @@ catch {
     Write-Host "   [GODPROJEXTH ERROR]" -ForegroundColor Red
     Write-Host "   $($_.Exception.Message)" -ForegroundColor Red
     Write-Host ""
-    Write-Host "   Required EXE name:" -ForegroundColor Yellow
-    Write-Host "   $PreferredExeName" -ForegroundColor Yellow
+    Write-Host "   Correct fix:" -ForegroundColor Yellow
+    Write-Host "   1. Click Update release on GitHub first" -ForegroundColor Yellow
+    Write-Host "   2. Make sure this file exists in Assets:" -ForegroundColor Yellow
+    Write-Host "      $PreferredExeName" -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "   GitHub Release:" -ForegroundColor Yellow
-    Write-Host "   https://github.com/$RepoOwner/$RepoName/releases" -ForegroundColor Yellow
+    Write-Host "   Release page:" -ForegroundColor Yellow
+    Write-Host "   https://github.com/$RepoOwner/$RepoName/releases/latest" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "   Install path:" -ForegroundColor Yellow
     Write-Host "   $ExePath" -ForegroundColor Yellow
