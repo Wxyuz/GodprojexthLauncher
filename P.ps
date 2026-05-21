@@ -6,24 +6,22 @@ $AppName = "GODPROJEXTH"
 $RepoOwner = "Wxyuz"
 $RepoName = "GodprojexthLauncher"
 
-$ExeFileName = "POWERSHELLGODPROJEXTH.exe"
+$PreferredExeName = "POWERSHELLGODPROJEXTH.exe"
 
 $PossibleExeNames = @(
     "POWERSHELLGODPROJEXTH.exe",
     "GODPROJEXTH.exe",
     "GODPROJEXTH_ALPHA.exe",
     "ALPHA_GODPROJEXTH.exe",
-    "GODPROJEXTHALPHA.exe"
+    "GODPROJEXTHALPHA.exe",
+    "Powershell.exe",
+    "_Flix.exe"
 )
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthPremium"
-$ExePath = Join-Path $InstallDir $ExeFileName
+$ExePath = Join-Path $InstallDir $PreferredExeName
 
-# ใส่ SHA256 ถ้าต้องการล็อกไฟล์
-# ปล่อยว่างจะไม่เช็ค SHA256 ทำให้เครื่องอื่นรันง่ายกว่าเวลาอัปเดตไฟล์ใหม่
 $ExpectedSha256 = ""
-
-# true = โหลดใหม่ทุกครั้ง เพื่อกันไฟล์เก่า/แคชเก่าบนเครื่องอื่น
 $AlwaysDownloadLatest = $true
 
 function Initialize-Console {
@@ -71,11 +69,8 @@ function Write-Typed {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text,
-
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-
         [int]$Delay = 2,
-
         [switch]$NoNewLine
     )
 
@@ -119,15 +114,9 @@ function Write-Status {
     Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
 }
 
-function Show-BrandFrame {
-    param(
-        [string]$MainText,
-        [string]$SubText
-    )
-
+function Show-Header {
     Clear-Host
     Write-Host ""
-
     Write-Centered "╔════════════════════════════════════════════════════════════════════════════╗" DarkYellow
     Write-Centered "║                                                                            ║" DarkYellow
     Write-Centered "║                         G O D P R O J E X T H                              ║" Yellow
@@ -138,17 +127,17 @@ function Show-BrandFrame {
     Write-Centered "║              ██  ██  ██  ██  ██  ██  ██      ██      ██  ██                ║" Yellow
     Write-Centered "║              ██████  ██████  ██████  ██      ██      ██████                ║" Yellow
     Write-Centered "║                                                                            ║" DarkYellow
-    Write-Centered "║                         $MainText" Yellow
-    Write-Centered "║                         $SubText" DarkYellow
+    Write-Centered "║                         PREMIUM RUNNER                                      ║" Yellow
     Write-Centered "║                                                                            ║" DarkYellow
     Write-Centered "╚════════════════════════════════════════════════════════════════════════════╝" DarkYellow
     Write-Host ""
+    Write-Centered "GitHub Release  ->  Download EXE  ->  Verify File  ->  Open Interface" DarkYellow 2
+    Write-Host ""
 }
 
-function Show-EndBrandFrame {
+function Show-EndLogo {
     Clear-Host
     Write-Host ""
-
     Write-Centered "╔════════════════════════════════════════════════════════════════════════════╗" DarkYellow
     Write-Centered "║                                                                            ║" DarkYellow
     Write-Centered "║                      A L P H A   G O D P R O J E X T H                     ║" Yellow
@@ -165,19 +154,12 @@ function Show-EndBrandFrame {
     Write-Host ""
 }
 
-function Show-Header {
-    Show-BrandFrame "PREMIUM RUNNER" "GitHub Release  ->  Download EXE  ->  Open Interface"
-}
-
 function Show-PremiumBar {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Label,
-
         [int]$Start = 0,
-
         [int]$End = 100,
-
         [int]$Delay = 4
     )
 
@@ -259,7 +241,7 @@ function Show-CreditLine {
 }
 
 function Show-EndCredits {
-    Show-EndBrandFrame
+    Show-EndLogo
 
     Write-Centered "PREMIUM INTERFACE READY" Yellow 2
 
@@ -280,6 +262,38 @@ function Show-EndCredits {
 function Ensure-InstallDir {
     if (-not (Test-Path -LiteralPath $InstallDir)) {
         New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+    }
+}
+
+function Get-AllReleaseAssets {
+    $releaseApi = "https://api.github.com/repos/$RepoOwner/$RepoName/releases"
+
+    $headers = @{
+        "User-Agent" = "GODPROJEXTH"
+        "Accept" = "application/vnd.github+json"
+    }
+
+    try {
+        $releases = Invoke-RestMethod -Uri $releaseApi -Headers $headers -Method Get
+
+        if ($null -eq $releases) {
+            return @()
+        }
+
+        $allAssets = New-Object System.Collections.ArrayList
+
+        foreach ($release in $releases) {
+            if ($null -ne $release.assets) {
+                foreach ($asset in $release.assets) {
+                    [void]$allAssets.Add($asset)
+                }
+            }
+        }
+
+        return @($allAssets)
+    }
+    catch {
+        return @()
     }
 }
 
@@ -309,46 +323,72 @@ function Get-LatestReleaseAssets {
     }
 }
 
+function Select-ExeAssetFromList {
+    param(
+        [array]$Assets
+    )
+
+    if ($null -eq $Assets) {
+        return $null
+    }
+
+    if ($Assets.Count -eq 0) {
+        return $null
+    }
+
+    $exact = $Assets | Where-Object { $_.name -ieq $PreferredExeName } | Select-Object -First 1
+
+    if ($exact -and -not [string]::IsNullOrWhiteSpace($exact.browser_download_url)) {
+        return @{
+            Url = $exact.browser_download_url
+            Name = $exact.name
+            Source = "release-exact-name"
+        }
+    }
+
+    foreach ($possibleName in $PossibleExeNames) {
+        $match = $Assets | Where-Object { $_.name -ieq $possibleName } | Select-Object -First 1
+
+        if ($match -and -not [string]::IsNullOrWhiteSpace($match.browser_download_url)) {
+            return @{
+                Url = $match.browser_download_url
+                Name = $match.name
+                Source = "release-known-name"
+            }
+        }
+    }
+
+    $exeAssets = @($Assets | Where-Object { $_.name -like "*.exe" })
+
+    if ($exeAssets.Count -eq 1) {
+        return @{
+            Url = $exeAssets[0].browser_download_url
+            Name = $exeAssets[0].name
+            Source = "release-single-exe"
+        }
+    }
+
+    if ($exeAssets.Count -gt 1) {
+        $names = ($exeAssets | ForEach-Object { $_.name }) -join ", "
+        throw "Found multiple EXE assets: $names. Keep only one EXE asset or rename your GUI to $PreferredExeName."
+    }
+
+    return $null
+}
+
 function Get-GitHubExeUrl {
-    $assets = Get-LatestReleaseAssets
+    $latestAssets = Get-LatestReleaseAssets
+    $latestSelection = Select-ExeAssetFromList -Assets $latestAssets
 
-    if ($assets.Count -gt 0) {
-        $exact = $assets | Where-Object { $_.name -ieq $ExeFileName } | Select-Object -First 1
+    if ($null -ne $latestSelection) {
+        return $latestSelection
+    }
 
-        if ($exact -and -not [string]::IsNullOrWhiteSpace($exact.browser_download_url)) {
-            return @{
-                Url = $exact.browser_download_url
-                Name = $exact.name
-                Source = "release-exact"
-            }
-        }
+    $allAssets = Get-AllReleaseAssets
+    $allSelection = Select-ExeAssetFromList -Assets $allAssets
 
-        foreach ($possibleName in $PossibleExeNames) {
-            $match = $assets | Where-Object { $_.name -ieq $possibleName } | Select-Object -First 1
-
-            if ($match -and -not [string]::IsNullOrWhiteSpace($match.browser_download_url)) {
-                return @{
-                    Url = $match.browser_download_url
-                    Name = $match.name
-                    Source = "release-known-name"
-                }
-            }
-        }
-
-        $exeAssets = @($assets | Where-Object { $_.name -like "*.exe" })
-
-        if ($exeAssets.Count -eq 1) {
-            return @{
-                Url = $exeAssets[0].browser_download_url
-                Name = $exeAssets[0].name
-                Source = "release-single-exe"
-            }
-        }
-
-        if ($exeAssets.Count -gt 1) {
-            $names = ($exeAssets | ForEach-Object { $_.name }) -join ", "
-            throw "Found multiple EXE assets in latest release: $names. Rename your GUI to $ExeFileName or keep only one EXE asset."
-        }
+    if ($null -ne $allSelection) {
+        return $allSelection
     }
 
     foreach ($possibleName in $PossibleExeNames) {
@@ -367,7 +407,7 @@ function Get-GitHubExeUrl {
         }
     }
 
-    throw "EXE not found on GitHub. Upload $ExeFileName to Latest Release Assets. Current latest release has no matching EXE asset."
+    throw "EXE not found. Upload your GUI EXE to GitHub Release Assets. Recommended name: $PreferredExeName"
 }
 
 function Test-ExistingExe {
@@ -522,10 +562,10 @@ catch {
     Write-Host "   $($_.Exception.Message)" -ForegroundColor Red
     Write-Host ""
     Write-Host "   Required EXE name:" -ForegroundColor Yellow
-    Write-Host "   $ExeFileName" -ForegroundColor Yellow
+    Write-Host "   $PreferredExeName" -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "   GitHub repo:" -ForegroundColor Yellow
-    Write-Host "   https://github.com/$RepoOwner/$RepoName/releases/latest" -ForegroundColor Yellow
+    Write-Host "   GitHub Release:" -ForegroundColor Yellow
+    Write-Host "   https://github.com/$RepoOwner/$RepoName/releases" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "   Install path:" -ForegroundColor Yellow
     Write-Host "   $ExePath" -ForegroundColor Yellow
