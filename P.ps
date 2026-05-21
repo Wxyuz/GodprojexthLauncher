@@ -21,7 +21,7 @@ $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthPremium"
 $ExePath = Join-Path $InstallDir $PreferredExeName
 
 $ExpectedSha256 = ""
-$AlwaysDownloadLatest = $true
+$AlwaysDownloadLatest = $false
 
 function Initialize-Console {
     try {
@@ -38,11 +38,11 @@ function Initialize-Console {
         $buffer = $Host.UI.RawUI.BufferSize
         $window = $Host.UI.RawUI.WindowSize
 
-        $targetWidth = [Math]::Min(112, $max.Width)
-        $targetHeight = [Math]::Min(34, $max.Height)
+        $targetWidth = [Math]::Min(108, $max.Width)
+        $targetHeight = [Math]::Min(32, $max.Height)
 
         if ($buffer.Width -lt $targetWidth) {
-            $Host.UI.RawUI.BufferSize = New-Object System.Management.Automation.Host.Size($targetWidth, [Math]::Max($buffer.Height, 1200))
+            $Host.UI.RawUI.BufferSize = New-Object System.Management.Automation.Host.Size($targetWidth, [Math]::Max($buffer.Height, 1000))
         }
 
         if ($window.Width -lt 96) {
@@ -68,14 +68,19 @@ function Write-Typed {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text,
+
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-        [int]$Delay = 2,
+
+        [int]$Delay = 1,
+
         [switch]$NoNewLine
     )
 
     foreach ($char in $Text.ToCharArray()) {
         Write-Host $char -NoNewline -ForegroundColor $Color
-        Start-Sleep -Milliseconds $Delay
+        if ($Delay -gt 0) {
+            Start-Sleep -Milliseconds $Delay
+        }
     }
 
     if (-not $NoNewLine) {
@@ -106,50 +111,53 @@ function Write-Status {
     param(
         [string]$Text,
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Green,
-        [int]$Delay = 2
+        [int]$Delay = 1
     )
 
     Write-Host "   " -NoNewline
     Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
 }
 
-function Show-Header {
+function Show-CompactLogo {
+    param(
+        [string]$ModeText = "PREMIUM RUNNER"
+    )
+
     Clear-Host
     Write-Host ""
-    Write-Centered "╔════════════════════════════════════════════════════════════════════════════╗" DarkYellow
-    Write-Centered "║                                                                            ║" DarkYellow
-    Write-Centered "║                         G O D P R O J E X T H                              ║" Yellow
-    Write-Centered "║                                                                            ║" DarkYellow
-    Write-Centered "║              ██████  ██████  ██████  ██████  ██████  ██████                ║" Yellow
-    Write-Centered "║              ██      ██  ██  ██  ██  ██  ██  ██      ██  ██                ║" Yellow
-    Write-Centered "║              ██  ██  ██  ██  ██  ██  ██████  █████   ██  ██                ║" Yellow
-    Write-Centered "║              ██  ██  ██  ██  ██  ██  ██      ██      ██  ██                ║" Yellow
-    Write-Centered "║              ██████  ██████  ██████  ██      ██      ██████                ║" Yellow
-    Write-Centered "║                                                                            ║" DarkYellow
-    Write-Centered "║                         PREMIUM RUNNER                                      ║" Yellow
-    Write-Centered "║                                                                            ║" DarkYellow
-    Write-Centered "╚════════════════════════════════════════════════════════════════════════════╝" DarkYellow
+    Write-Centered "╔══════════════════════════════════════════════════════════════════════╗" DarkYellow
+    Write-Centered "║                                                                      ║" DarkYellow
+    Write-Centered "║                         G O D P R O J E X T H                        ║" Yellow
+    Write-Centered "║                                                                      ║" DarkYellow
+    Write-Centered "║      █▀▀ █▀█ █▀▄ █▀█ █▀█ █▀█ ░░█ █▀▀ ▀▄▀ ▀█▀ █░█                    ║" Yellow
+    Write-Centered "║      █▄█ █▄█ █▄▀ █▀▀ █▀▄ █▄█ █▄█ █▄▄ █░█ ░█░ █▀█                    ║" Yellow
+    Write-Centered "║                                                                      ║" DarkYellow
+    Write-Centered "║                         $ModeText                                    ║" Yellow
+    Write-Centered "║                                                                      ║" DarkYellow
+    Write-Centered "╚══════════════════════════════════════════════════════════════════════╝" DarkYellow
     Write-Host ""
-    Write-Centered "GitHub Release  ->  Download EXE  ->  Verify File  ->  Open Interface" DarkYellow 2
+}
+
+function Show-Header {
+    Show-CompactLogo "PREMIUM RUNNER"
+    Write-Centered "GitHub Release  ->  Download EXE  ->  Open Interface" DarkYellow 1
     Write-Host ""
 }
 
 function Show-EndLogo {
     Clear-Host
     Write-Host ""
-    Write-Centered "╔════════════════════════════════════════════════════════════════════════════╗" DarkYellow
-    Write-Centered "║                                                                            ║" DarkYellow
-    Write-Centered "║                      A L P H A   G O D P R O J E X T H                     ║" Yellow
-    Write-Centered "║                                                                            ║" DarkYellow
-    Write-Centered "║                   █████  ██      ██████  ██  ██  █████                     ║" Yellow
-    Write-Centered "║                   ██ ██  ██      ██  ██  ██  ██  ██ ██                     ║" Yellow
-    Write-Centered "║                   █████  ██      ██████  ██████  █████                     ║" Yellow
-    Write-Centered "║                   ██ ██  ██      ██      ██  ██  ██ ██                     ║" Yellow
-    Write-Centered "║                   ██ ██  ██████  ██      ██  ██  ██ ██                     ║" Yellow
-    Write-Centered "║                                                                            ║" DarkYellow
-    Write-Centered "║                         G O D P R O J E X T H                              ║" Yellow
-    Write-Centered "║                                                                            ║" DarkYellow
-    Write-Centered "╚════════════════════════════════════════════════════════════════════════════╝" DarkYellow
+    Write-Centered "╔══════════════════════════════════════════════════════════════════════╗" DarkYellow
+    Write-Centered "║                                                                      ║" DarkYellow
+    Write-Centered "║                     A L P H A   G O D P R O J E X T H                ║" Yellow
+    Write-Centered "║                                                                      ║" DarkYellow
+    Write-Centered "║               █▀█ █░░ █▀█ █░█ █▀█                                    ║" Yellow
+    Write-Centered "║               █▀█ █▄▄ █▀▀ █▀█ █▀█                                    ║" Yellow
+    Write-Centered "║                                                                      ║" DarkYellow
+    Write-Centered "║      █▀▀ █▀█ █▀▄ █▀█ █▀█ █▀█ ░░█ █▀▀ ▀▄▀ ▀█▀ █░█                    ║" Yellow
+    Write-Centered "║      █▄█ █▄█ █▄▀ █▀▀ █▀▄ █▄█ █▄█ █▄▄ █░█ ░█░ █▀█                    ║" Yellow
+    Write-Centered "║                                                                      ║" DarkYellow
+    Write-Centered "╚══════════════════════════════════════════════════════════════════════╝" DarkYellow
     Write-Host ""
 }
 
@@ -157,9 +165,12 @@ function Show-PremiumBar {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Label,
+
         [int]$Start = 0,
+
         [int]$End = 100,
-        [int]$Delay = 4
+
+        [int]$Delay = 2
     )
 
     $barWidth = 52
@@ -167,9 +178,9 @@ function Show-PremiumBar {
     $shine = @("◆", "✦", "◇", "✦")
 
     Write-Host ""
-    Write-Centered $Label Yellow 2
+    Write-Centered $Label Yellow 1
 
-    for ($i = $Start; $i -le $End; $i += 2) {
+    for ($i = $Start; $i -le $End; $i += 4) {
         if ($i -gt 100) {
             $i = 100
         }
@@ -217,7 +228,9 @@ function Show-PremiumBar {
         Write-Host ("{0,3}%" -f $i) -NoNewline -ForegroundColor White
         Write-Host "  $spark $state" -NoNewline -ForegroundColor Yellow
 
-        Start-Sleep -Milliseconds $Delay
+        if ($Delay -gt 0) {
+            Start-Sleep -Milliseconds $Delay
+        }
     }
 
     Write-Host ""
@@ -225,8 +238,8 @@ function Show-PremiumBar {
 
 function Show-Successfully {
     Write-Host ""
-    Write-Centered "SUCCESSFULLY" Green 4
-    Start-Sleep -Milliseconds 180
+    Write-Centered "SUCCESSFULLY" Green 2
+    Start-Sleep -Milliseconds 100
 }
 
 function Show-CreditLine {
@@ -236,15 +249,15 @@ function Show-CreditLine {
     )
 
     $text = ("{0,-8} : {1}" -f $Name, $Value)
-    Write-Centered $text Yellow 2
+    Write-Centered $text Yellow 1
 }
 
 function Show-EndCredits {
     Show-EndLogo
 
-    Write-Centered "PREMIUM INTERFACE READY" Yellow 2
+    Write-Centered "PREMIUM INTERFACE READY" Yellow 1
 
-    Show-PremiumBar -Label "Finalizing premium session" -Start 90 -End 100 -Delay 5
+    Show-PremiumBar -Label "Finalizing premium session" -Start 90 -End 100 -Delay 2
     Show-Successfully
 
     Write-Host ""
@@ -255,7 +268,7 @@ function Show-EndCredits {
     Show-CreditLine "DISCORD" "GODPROJEXTH"
     Write-Centered "╰────────────────────────────────────────────╯" DarkYellow
 
-    Start-Sleep -Milliseconds 220
+    Start-Sleep -Milliseconds 120
 }
 
 function Ensure-InstallDir {
@@ -346,6 +359,7 @@ function Select-ExeAssetFromAssets {
         return @{
             Url = $exact.browser_download_url
             Name = $exact.name
+            Size = [int64]$exact.size
             Source = "latest-release-exact"
         }
     }
@@ -357,6 +371,7 @@ function Select-ExeAssetFromAssets {
             return @{
                 Url = $match.browser_download_url
                 Name = $match.name
+                Size = [int64]$match.size
                 Source = "latest-release-known"
             }
         }
@@ -368,6 +383,7 @@ function Select-ExeAssetFromAssets {
         return @{
             Url = $exeAssets[0].browser_download_url
             Name = $exeAssets[0].name
+            Size = [int64]$exeAssets[0].size
             Source = "latest-release-single-exe"
         }
     }
@@ -411,6 +427,7 @@ function Get-GitHubExeInfo {
             return @{
                 Url = $selectedFromRelease.Url
                 Name = $selectedFromRelease.Name
+                Size = [int64]$selectedFromRelease.Size
                 Source = "other-release"
             }
         }
@@ -420,11 +437,12 @@ function Get-GitHubExeInfo {
         $rawUrl = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/main/$possibleName"
 
         try {
-            $null = Invoke-WebRequest -Uri $rawUrl -Method Head -UseBasicParsing
+            $head = Invoke-WebRequest -Uri $rawUrl -Method Head -UseBasicParsing
 
             return @{
                 Url = $rawUrl
                 Name = $possibleName
+                Size = 0
                 Source = "main-branch-raw"
             }
         }
@@ -436,6 +454,10 @@ function Get-GitHubExeInfo {
 }
 
 function Test-ExistingExe {
+    param(
+        [int64]$RemoteSize = 0
+    )
+
     if (-not (Test-Path -LiteralPath $ExePath)) {
         return $false
     }
@@ -444,26 +466,26 @@ function Test-ExistingExe {
         return $false
     }
 
-    if ([string]::IsNullOrWhiteSpace($ExpectedSha256)) {
-        try {
-            $info = Get-Item -LiteralPath $ExePath
+    try {
+        $info = Get-Item -LiteralPath $ExePath
 
-            if ($info.Length -gt 10240) {
-                return $true
-            }
-
+        if ($info.Length -lt 10240) {
             Remove-Item -LiteralPath $ExePath -Force -ErrorAction SilentlyContinue
             return $false
         }
-        catch {
-            return $false
+
+        if ($RemoteSize -gt 0 -and $info.Length -eq $RemoteSize) {
+            return $true
         }
-    }
 
-    try {
+        if ([string]::IsNullOrWhiteSpace($ExpectedSha256)) {
+            return $true
+        }
+
         $actual = (Get-FileHash -Algorithm SHA256 -Path $ExePath).Hash.ToUpperInvariant()
+        $expected = $ExpectedSha256.ToUpperInvariant()
 
-        if ($actual -eq $ExpectedSha256.ToUpperInvariant()) {
+        if ($actual -eq $expected) {
             return $true
         }
 
@@ -471,7 +493,6 @@ function Test-ExistingExe {
         return $false
     }
     catch {
-        Remove-Item -LiteralPath $ExePath -Force -ErrorAction SilentlyContinue
         return $false
     }
 }
@@ -479,30 +500,45 @@ function Test-ExistingExe {
 function Download-Exe {
     Ensure-InstallDir
 
-    if (Test-ExistingExe) {
-        Write-Status "Verified local package." Green
-        return
-    }
-
     Write-Status "Connecting to GitHub release." Green
-    Show-PremiumBar -Label "Checking premium package" -Start 1 -End 28 -Delay 4
 
     $exeInfo = Get-GitHubExeInfo
     $exeUrl = $exeInfo.Url
     $remoteName = $exeInfo.Name
     $sourceType = $exeInfo.Source
+    $remoteSize = [int64]$exeInfo.Size
+
+    if (Test-ExistingExe -RemoteSize $remoteSize) {
+        Write-Status "Using cached package: $remoteName" Green
+        Show-PremiumBar -Label "Preparing cached interface" -Start 60 -End 88 -Delay 1
+        return
+    }
+
+    Show-PremiumBar -Label "Checking premium package" -Start 1 -End 20 -Delay 2
 
     Write-Status "Found package: $remoteName" Green
     Write-Status "Source: $sourceType" Yellow
 
-    Show-PremiumBar -Label "Downloading GODPROJEXTH interface" -Start 29 -End 70 -Delay 4
+    Show-PremiumBar -Label "Downloading GODPROJEXTH interface" -Start 21 -End 70 -Delay 2
 
     try {
         if (Test-Path -LiteralPath $ExePath) {
             Remove-Item -LiteralPath $ExePath -Force -ErrorAction SilentlyContinue
         }
 
-        Invoke-WebRequest -Uri $exeUrl -OutFile $ExePath -UseBasicParsing
+        $tempPath = "$ExePath.download"
+
+        if (Test-Path -LiteralPath $tempPath) {
+            Remove-Item -LiteralPath $tempPath -Force -ErrorAction SilentlyContinue
+        }
+
+        Invoke-WebRequest -Uri $exeUrl -OutFile $tempPath -UseBasicParsing
+
+        if (-not (Test-Path -LiteralPath $tempPath)) {
+            throw "Temporary download file was not created."
+        }
+
+        Move-Item -LiteralPath $tempPath -Destination $ExePath -Force
     }
     catch {
         throw "Download failed. Check GitHub Release asset or internet connection."
@@ -529,12 +565,12 @@ function Download-Exe {
 function Verify-Exe {
     if ([string]::IsNullOrWhiteSpace($ExpectedSha256)) {
         Write-Status "SHA256 skipped." Yellow
-        Show-PremiumBar -Label "Preparing verified package" -Start 71 -End 88 -Delay 4
+        Show-PremiumBar -Label "Preparing verified package" -Start 71 -End 88 -Delay 1
         return
     }
 
     Write-Status "Verifying file integrity." Green
-    Show-PremiumBar -Label "Verifying SHA256 integrity" -Start 71 -End 88 -Delay 4
+    Show-PremiumBar -Label "Verifying SHA256 integrity" -Start 71 -End 88 -Delay 1
 
     $actual = (Get-FileHash -Algorithm SHA256 -Path $ExePath).Hash.ToUpperInvariant()
     $expected = $ExpectedSha256.ToUpperInvariant()
@@ -547,14 +583,14 @@ function Verify-Exe {
 
 function Open-GuiExe {
     Write-Status "Opening premium interface." Green
-    Show-PremiumBar -Label "Opening interface" -Start 89 -End 100 -Delay 4
+    Show-PremiumBar -Label "Opening interface" -Start 89 -End 100 -Delay 1
     Show-Successfully
 
     Start-Process -FilePath $ExePath -WorkingDirectory $InstallDir
 }
 
 function Exit-Runner {
-    Start-Sleep -Milliseconds 160
+    Start-Sleep -Milliseconds 80
 
     try {
         [Console]::CursorVisible = $true
@@ -571,7 +607,6 @@ try {
 
     Download-Exe
     Verify-Exe
-    Show-EndCredits
     Open-GuiExe
     Exit-Runner
 }
