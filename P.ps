@@ -5,14 +5,26 @@ $ProgressPreference = "SilentlyContinue"
 $AppName = "GODPROJEXTH"
 $RepoOwner = "Wxyuz"
 $RepoName = "GodprojexthLauncher"
+
 $ExeFileName = "POWERSHELLGODPROJEXTH.exe"
+
+$PossibleExeNames = @(
+    "POWERSHELLGODPROJEXTH.exe",
+    "GODPROJEXTH.exe",
+    "GODPROJEXTH_ALPHA.exe",
+    "ALPHA_GODPROJEXTH.exe",
+    "GODPROJEXTHALPHA.exe"
+)
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthPremium"
 $ExePath = Join-Path $InstallDir $ExeFileName
 
-# ถ้าต้องการล็อกไฟล์ให้ปลอดภัยมากขึ้น ให้ใส่ SHA256 ของ EXE ตรงนี้
-# ถ้าปล่อยว่าง จะไม่เช็ค SHA256 และจะใช้งานง่ายกว่าเวลาอัปเดตไฟล์ใหม่
+# ใส่ SHA256 ถ้าต้องการล็อกไฟล์
+# ปล่อยว่างจะไม่เช็ค SHA256 ทำให้เครื่องอื่นรันง่ายกว่าเวลาอัปเดตไฟล์ใหม่
 $ExpectedSha256 = ""
+
+# true = โหลดใหม่ทุกครั้ง เพื่อกันไฟล์เก่า/แคชเก่าบนเครื่องอื่น
+$AlwaysDownloadLatest = $true
 
 function Initialize-Console {
     try {
@@ -59,8 +71,11 @@ function Write-Typed {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text,
+
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
+
         [int]$Delay = 2,
+
         [switch]$NoNewLine
     )
 
@@ -104,51 +119,65 @@ function Write-Status {
     Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
 }
 
-function Show-Header {
+function Show-BrandFrame {
+    param(
+        [string]$MainText,
+        [string]$SubText
+    )
+
     Clear-Host
     Write-Host ""
+
     Write-Centered "╔════════════════════════════════════════════════════════════════════════════╗" DarkYellow
-    Write-Centered "║                                                                        ║" DarkYellow
-    Write-Centered "║     ██████╗  ██████╗ ██████╗ ██████╗  ██████╗      ██╗███████╗       ║" Yellow
-    Write-Centered "║    ██╔════╝ ██╔═══██╗██╔══██╗██╔══██╗██╔═══██╗     ██║██╔════╝       ║" Yellow
-    Write-Centered "║    ██║  ███╗██║   ██║██║  ██║██████╔╝██║   ██║     ██║█████╗         ║" Yellow
-    Write-Centered "║    ██║   ██║██║   ██║██║  ██║██╔═══╝ ██║   ██║██   ██║██╔══╝         ║" Yellow
-    Write-Centered "║    ╚██████╔╝╚██████╔╝██████╔╝██║     ╚██████╔╝╚█████╔╝███████╗       ║" Yellow
-    Write-Centered "║     ╚═════╝  ╚═════╝ ╚═════╝ ╚═╝      ╚═════╝  ╚════╝ ╚══════╝       ║" Yellow
-    Write-Centered "║                                                                        ║" DarkYellow
-    Write-Centered "║                       G O D P R O J E X T H                            ║" Yellow
-    Write-Centered "║                                                                        ║" DarkYellow
+    Write-Centered "║                                                                            ║" DarkYellow
+    Write-Centered "║                         G O D P R O J E X T H                              ║" Yellow
+    Write-Centered "║                                                                            ║" DarkYellow
+    Write-Centered "║              ██████  ██████  ██████  ██████  ██████  ██████                ║" Yellow
+    Write-Centered "║              ██      ██  ██  ██  ██  ██  ██  ██      ██  ██                ║" Yellow
+    Write-Centered "║              ██  ██  ██  ██  ██  ██  ██████  █████   ██  ██                ║" Yellow
+    Write-Centered "║              ██  ██  ██  ██  ██  ██  ██      ██      ██  ██                ║" Yellow
+    Write-Centered "║              ██████  ██████  ██████  ██      ██      ██████                ║" Yellow
+    Write-Centered "║                                                                            ║" DarkYellow
+    Write-Centered "║                         $MainText" Yellow
+    Write-Centered "║                         $SubText" DarkYellow
+    Write-Centered "║                                                                            ║" DarkYellow
     Write-Centered "╚════════════════════════════════════════════════════════════════════════════╝" DarkYellow
-    Write-Host ""
-    Write-Centered "GODPROJEXTH PREMIUM RUNNER" Yellow 2
-    Write-Centered "GitHub Release  ->  Download EXE  ->  Verify File  ->  Open Interface" DarkYellow 2
     Write-Host ""
 }
 
-function Show-EndLogo {
+function Show-EndBrandFrame {
     Clear-Host
     Write-Host ""
+
     Write-Centered "╔════════════════════════════════════════════════════════════════════════════╗" DarkYellow
-    Write-Centered "║                                                                        ║" DarkYellow
-    Write-Centered "║        █████╗ ██╗     ██████╗ ██╗  ██╗ █████╗                         ║" Yellow
-    Write-Centered "║       ██╔══██╗██║     ██╔══██╗██║  ██║██╔══██╗                        ║" Yellow
-    Write-Centered "║       ███████║██║     ██████╔╝███████║███████║                        ║" Yellow
-    Write-Centered "║       ██╔══██║██║     ██╔═══╝ ██╔══██║██╔══██║                        ║" Yellow
-    Write-Centered "║       ██║  ██║███████╗██║     ██║  ██║██║  ██║                        ║" Yellow
-    Write-Centered "║       ╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝                        ║" Yellow
-    Write-Centered "║                                                                        ║" DarkYellow
-    Write-Centered "║                       G O D P R O J E X T H                            ║" Yellow
-    Write-Centered "║                                                                        ║" DarkYellow
+    Write-Centered "║                                                                            ║" DarkYellow
+    Write-Centered "║                      A L P H A   G O D P R O J E X T H                     ║" Yellow
+    Write-Centered "║                                                                            ║" DarkYellow
+    Write-Centered "║                   █████  ██      ██████  ██  ██  █████                     ║" Yellow
+    Write-Centered "║                   ██ ██  ██      ██  ██  ██  ██  ██ ██                     ║" Yellow
+    Write-Centered "║                   █████  ██      ██████  ██████  █████                     ║" Yellow
+    Write-Centered "║                   ██ ██  ██      ██      ██  ██  ██ ██                     ║" Yellow
+    Write-Centered "║                   ██ ██  ██████  ██      ██  ██  ██ ██                     ║" Yellow
+    Write-Centered "║                                                                            ║" DarkYellow
+    Write-Centered "║                         G O D P R O J E X T H                              ║" Yellow
+    Write-Centered "║                                                                            ║" DarkYellow
     Write-Centered "╚════════════════════════════════════════════════════════════════════════════╝" DarkYellow
     Write-Host ""
+}
+
+function Show-Header {
+    Show-BrandFrame "PREMIUM RUNNER" "GitHub Release  ->  Download EXE  ->  Open Interface"
 }
 
 function Show-PremiumBar {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Label,
+
         [int]$Start = 0,
+
         [int]$End = 100,
+
         [int]$Delay = 4
     )
 
@@ -230,7 +259,7 @@ function Show-CreditLine {
 }
 
 function Show-EndCredits {
-    Show-EndLogo
+    Show-EndBrandFrame
 
     Write-Centered "PREMIUM INTERFACE READY" Yellow 2
 
@@ -254,42 +283,99 @@ function Ensure-InstallDir {
     }
 }
 
-function Get-GitHubExeUrl {
+function Get-LatestReleaseAssets {
     $releaseApi = "https://api.github.com/repos/$RepoOwner/$RepoName/releases/latest"
 
-    try {
-        $headers = @{
-            "User-Agent" = "GODPROJEXTH"
-            "Accept" = "application/vnd.github+json"
-        }
+    $headers = @{
+        "User-Agent" = "GODPROJEXTH"
+        "Accept" = "application/vnd.github+json"
+    }
 
+    try {
         $release = Invoke-RestMethod -Uri $releaseApi -Headers $headers -Method Get
 
-        if ($null -ne $release -and $null -ne $release.assets) {
-            $asset = $release.assets | Where-Object { $_.name -eq $ExeFileName } | Select-Object -First 1
+        if ($null -eq $release) {
+            return @()
+        }
 
-            if ($asset -and -not [string]::IsNullOrWhiteSpace($asset.browser_download_url)) {
-                return $asset.browser_download_url
+        if ($null -eq $release.assets) {
+            return @()
+        }
+
+        return @($release.assets)
+    }
+    catch {
+        return @()
+    }
+}
+
+function Get-GitHubExeUrl {
+    $assets = Get-LatestReleaseAssets
+
+    if ($assets.Count -gt 0) {
+        $exact = $assets | Where-Object { $_.name -ieq $ExeFileName } | Select-Object -First 1
+
+        if ($exact -and -not [string]::IsNullOrWhiteSpace($exact.browser_download_url)) {
+            return @{
+                Url = $exact.browser_download_url
+                Name = $exact.name
+                Source = "release-exact"
             }
         }
-    }
-    catch {
+
+        foreach ($possibleName in $PossibleExeNames) {
+            $match = $assets | Where-Object { $_.name -ieq $possibleName } | Select-Object -First 1
+
+            if ($match -and -not [string]::IsNullOrWhiteSpace($match.browser_download_url)) {
+                return @{
+                    Url = $match.browser_download_url
+                    Name = $match.name
+                    Source = "release-known-name"
+                }
+            }
+        }
+
+        $exeAssets = @($assets | Where-Object { $_.name -like "*.exe" })
+
+        if ($exeAssets.Count -eq 1) {
+            return @{
+                Url = $exeAssets[0].browser_download_url
+                Name = $exeAssets[0].name
+                Source = "release-single-exe"
+            }
+        }
+
+        if ($exeAssets.Count -gt 1) {
+            $names = ($exeAssets | ForEach-Object { $_.name }) -join ", "
+            throw "Found multiple EXE assets in latest release: $names. Rename your GUI to $ExeFileName or keep only one EXE asset."
+        }
     }
 
-    $rawUrl = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/main/$ExeFileName"
+    foreach ($possibleName in $PossibleExeNames) {
+        $rawUrl = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/main/$possibleName"
 
-    try {
-        $null = Invoke-WebRequest -Uri $rawUrl -Method Head -UseBasicParsing
-        return $rawUrl
-    }
-    catch {
+        try {
+            $null = Invoke-WebRequest -Uri $rawUrl -Method Head -UseBasicParsing
+
+            return @{
+                Url = $rawUrl
+                Name = $possibleName
+                Source = "raw-main"
+            }
+        }
+        catch {
+        }
     }
 
-    throw "EXE not found on GitHub. Upload $ExeFileName to Latest Release Assets or main branch."
+    throw "EXE not found on GitHub. Upload $ExeFileName to Latest Release Assets. Current latest release has no matching EXE asset."
 }
 
 function Test-ExistingExe {
     if (-not (Test-Path -LiteralPath $ExePath)) {
+        return $false
+    }
+
+    if ($AlwaysDownloadLatest) {
         return $false
     }
 
@@ -334,14 +420,23 @@ function Download-Exe {
     }
 
     Write-Status "Connecting to GitHub release." Green
-    Show-PremiumBar -Label "Checking premium package" -Start 1 -End 30 -Delay 4
+    Show-PremiumBar -Label "Checking premium package" -Start 1 -End 28 -Delay 4
 
-    $exeUrl = Get-GitHubExeUrl
+    $exeInfo = Get-GitHubExeUrl
+    $exeUrl = $exeInfo.Url
+    $remoteName = $exeInfo.Name
+    $sourceType = $exeInfo.Source
 
-    Write-Status "Downloading interface package." Yellow
-    Show-PremiumBar -Label "Downloading GODPROJEXTH interface" -Start 31 -End 70 -Delay 4
+    Write-Status "Found package: $remoteName" Green
+    Write-Status "Source: $sourceType" Yellow
+
+    Show-PremiumBar -Label "Downloading GODPROJEXTH interface" -Start 29 -End 70 -Delay 4
 
     try {
+        if (Test-Path -LiteralPath $ExePath) {
+            Remove-Item -LiteralPath $ExePath -Force -ErrorAction SilentlyContinue
+        }
+
         Invoke-WebRequest -Uri $exeUrl -OutFile $ExePath -UseBasicParsing
     }
     catch {
@@ -357,6 +452,12 @@ function Download-Exe {
     if ($info.Length -lt 10240) {
         Remove-Item -LiteralPath $ExePath -Force -ErrorAction SilentlyContinue
         throw "Downloaded EXE looks incomplete."
+    }
+
+    try {
+        Unblock-File -LiteralPath $ExePath -ErrorAction SilentlyContinue
+    }
+    catch {
     }
 }
 
@@ -420,8 +521,11 @@ catch {
     Write-Host "   [GODPROJEXTH ERROR]" -ForegroundColor Red
     Write-Host "   $($_.Exception.Message)" -ForegroundColor Red
     Write-Host ""
-    Write-Host "   Expected EXE name:" -ForegroundColor Yellow
+    Write-Host "   Required EXE name:" -ForegroundColor Yellow
     Write-Host "   $ExeFileName" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "   GitHub repo:" -ForegroundColor Yellow
+    Write-Host "   https://github.com/$RepoOwner/$RepoName/releases/latest" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "   Install path:" -ForegroundColor Yellow
     Write-Host "   $ExePath" -ForegroundColor Yellow
