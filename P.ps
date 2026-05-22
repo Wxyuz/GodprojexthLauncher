@@ -19,9 +19,12 @@ $PossibleExeNames = @(
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthPremium"
 $ExePath = Join-Path $InstallDir $PreferredExeName
+$TempDownloadPath = Join-Path $InstallDir ($PreferredExeName + ".download")
+$RuntimeTempDir = Join-Path $InstallDir "runtime_tmp"
 
 $ExpectedSha256 = ""
-$AlwaysDownloadLatest = $false
+$AlwaysDownloadLatest = $true
+$DownloadRetryCount = 3
 
 function Initialize-Console {
     try {
@@ -68,16 +71,14 @@ function Write-Typed {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Text,
-
         [System.ConsoleColor]$Color = [System.ConsoleColor]::Yellow,
-
         [int]$Delay = 1,
-
         [switch]$NoNewLine
     )
 
     foreach ($char in $Text.ToCharArray()) {
         Write-Host $char -NoNewline -ForegroundColor $Color
+
         if ($Delay -gt 0) {
             Start-Sleep -Milliseconds $Delay
         }
@@ -118,11 +119,7 @@ function Write-Status {
     Write-Typed "[GODPROJEXTH] $Text" $Color $Delay
 }
 
-function Show-CompactLogo {
-    param(
-        [string]$ModeText = "PREMIUM RUNNER"
-    )
-
+function Show-Header {
     Clear-Host
     Write-Host ""
     Write-Centered "╔══════════════════════════════════════════════════════════════════════╗" DarkYellow
@@ -132,14 +129,10 @@ function Show-CompactLogo {
     Write-Centered "║      █▀▀ █▀█ █▀▄ █▀█ █▀█ █▀█ ░░█ █▀▀ ▀▄▀ ▀█▀ █░█                    ║" Yellow
     Write-Centered "║      █▄█ █▄█ █▄▀ █▀▀ █▀▄ █▄█ █▄█ █▄▄ █░█ ░█░ █▀█                    ║" Yellow
     Write-Centered "║                                                                      ║" DarkYellow
-    Write-Centered "║                         $ModeText                                    ║" Yellow
+    Write-Centered "║                         PREMIUM RUNNER                               ║" Yellow
     Write-Centered "║                                                                      ║" DarkYellow
     Write-Centered "╚══════════════════════════════════════════════════════════════════════╝" DarkYellow
     Write-Host ""
-}
-
-function Show-Header {
-    Show-CompactLogo "PREMIUM RUNNER"
     Write-Centered "GitHub Release  ->  Download EXE  ->  Open Interface" DarkYellow 1
     Write-Host ""
 }
@@ -165,11 +158,8 @@ function Show-PremiumBar {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Label,
-
         [int]$Start = 0,
-
         [int]$End = 100,
-
         [int]$Delay = 2
     )
 
@@ -242,38 +232,22 @@ function Show-Successfully {
     Start-Sleep -Milliseconds 100
 }
 
-function Show-CreditLine {
-    param(
-        [string]$Name,
-        [string]$Value
-    )
-
-    $text = ("{0,-8} : {1}" -f $Name, $Value)
-    Write-Centered $text Yellow 1
-}
-
-function Show-EndCredits {
-    Show-EndLogo
-
-    Write-Centered "PREMIUM INTERFACE READY" Yellow 1
-
-    Show-PremiumBar -Label "Finalizing premium session" -Start 90 -End 100 -Delay 2
-    Show-Successfully
-
-    Write-Host ""
-    Write-Centered "╭────────────────────────────────────────────╮" DarkYellow
-    Show-CreditLine "WEBSITE" "GODPROJEXTH"
-    Show-CreditLine "YOUTUBE" "GODPROJEXTH"
-    Show-CreditLine "TIKTOK" "GODPROJEXTH"
-    Show-CreditLine "DISCORD" "GODPROJEXTH"
-    Write-Centered "╰────────────────────────────────────────────╯" DarkYellow
-
-    Start-Sleep -Milliseconds 120
-}
-
 function Ensure-InstallDir {
     if (-not (Test-Path -LiteralPath $InstallDir)) {
         New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+    }
+}
+
+function Prepare-RuntimeTemp {
+    try {
+        if (Test-Path -LiteralPath $RuntimeTempDir) {
+            Remove-Item -LiteralPath $RuntimeTempDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+
+        New-Item -ItemType Directory -Path $RuntimeTempDir -Force | Out-Null
+    }
+    catch {
+        throw "Cannot prepare runtime temp folder: $RuntimeTempDir"
     }
 }
 
@@ -299,7 +273,7 @@ function Get-LatestRelease {
         return Invoke-GitHubApi -Uri $latestUri
     }
     catch {
-        throw "Cannot read latest release from GitHub. Make sure you clicked Update release and the repo is public."
+        throw "Cannot read latest release from GitHub. Make sure repo is public and release exists."
     }
 }
 
@@ -411,7 +385,6 @@ function Get-GitHubExeInfo {
     }
 
     $latestAssetNames = Get-AssetNamesText -Assets $latestAssets
-
     $allReleases = Get-AllReleases
 
     foreach ($release in $allReleases) {
@@ -437,7 +410,7 @@ function Get-GitHubExeInfo {
         $rawUrl = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/main/$possibleName"
 
         try {
-            $head = Invoke-WebRequest -Uri $rawUrl -Method Head -UseBasicParsing
+            $null = Invoke-WebRequest -Uri $rawUrl -Method Head -UseBasicParsing
 
             return @{
                 Url = $rawUrl
@@ -497,6 +470,65 @@ function Test-ExistingExe {
     }
 }
 
+function Save-ExeFromUrl {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Url,
+        [int64]$RemoteSize
+    )
+
+    $lastError = $null
+
+    for ($attempt = 1; $attempt -le $DownloadRetryCount; $attempt++) {
+        try {
+            if (Test-Path -LiteralPath $TempDownloadPath) {
+                Remove-Item -LiteralPath $TempDownloadPath -Force -ErrorAction SilentlyContinue
+            }
+
+            Invoke-WebRequest -Uri $Url -OutFile $TempDownloadPath -UseBasicParsing
+
+            if (-not (Test-Path -LiteralPath $TempDownloadPath)) {
+                throw "Temporary download file was not created."
+            }
+
+            $downloaded = Get-Item -LiteralPath $TempDownloadPath
+
+            if ($downloaded.Length -lt 10240) {
+                throw "Downloaded file is too small."
+            }
+
+            if ($RemoteSize -gt 0 -and $downloaded.Length -ne $RemoteSize) {
+                throw "Downloaded size mismatch. Expected $RemoteSize bytes, got $($downloaded.Length) bytes."
+            }
+
+            if (Test-Path -LiteralPath $ExePath) {
+                Remove-Item -LiteralPath $ExePath -Force -ErrorAction SilentlyContinue
+            }
+
+            Move-Item -LiteralPath $TempDownloadPath -Destination $ExePath -Force
+
+            try {
+                Unblock-File -LiteralPath $ExePath -ErrorAction SilentlyContinue
+            }
+            catch {
+            }
+
+            return
+        }
+        catch {
+            $lastError = $_.Exception.Message
+
+            if (Test-Path -LiteralPath $TempDownloadPath) {
+                Remove-Item -LiteralPath $TempDownloadPath -Force -ErrorAction SilentlyContinue
+            }
+
+            Start-Sleep -Milliseconds 350
+        }
+    }
+
+    throw "Download failed after $DownloadRetryCount attempts. Last error: $lastError"
+}
+
 function Download-Exe {
     Ensure-InstallDir
 
@@ -521,45 +553,7 @@ function Download-Exe {
 
     Show-PremiumBar -Label "Downloading GODPROJEXTH interface" -Start 21 -End 70 -Delay 2
 
-    try {
-        if (Test-Path -LiteralPath $ExePath) {
-            Remove-Item -LiteralPath $ExePath -Force -ErrorAction SilentlyContinue
-        }
-
-        $tempPath = "$ExePath.download"
-
-        if (Test-Path -LiteralPath $tempPath) {
-            Remove-Item -LiteralPath $tempPath -Force -ErrorAction SilentlyContinue
-        }
-
-        Invoke-WebRequest -Uri $exeUrl -OutFile $tempPath -UseBasicParsing
-
-        if (-not (Test-Path -LiteralPath $tempPath)) {
-            throw "Temporary download file was not created."
-        }
-
-        Move-Item -LiteralPath $tempPath -Destination $ExePath -Force
-    }
-    catch {
-        throw "Download failed. Check GitHub Release asset or internet connection."
-    }
-
-    if (-not (Test-Path -LiteralPath $ExePath)) {
-        throw "Download finished but EXE was not found."
-    }
-
-    $info = Get-Item -LiteralPath $ExePath
-
-    if ($info.Length -lt 10240) {
-        Remove-Item -LiteralPath $ExePath -Force -ErrorAction SilentlyContinue
-        throw "Downloaded EXE looks incomplete."
-    }
-
-    try {
-        Unblock-File -LiteralPath $ExePath -ErrorAction SilentlyContinue
-    }
-    catch {
-    }
+    Save-ExeFromUrl -Url $exeUrl -RemoteSize $remoteSize
 }
 
 function Verify-Exe {
@@ -582,11 +576,26 @@ function Verify-Exe {
 }
 
 function Open-GuiExe {
+    Write-Status "Preparing clean runtime temp." Green
+    Prepare-RuntimeTemp
+
     Write-Status "Opening premium interface." Green
     Show-PremiumBar -Label "Opening interface" -Start 89 -End 100 -Delay 1
     Show-Successfully
 
-    Start-Process -FilePath $ExePath -WorkingDirectory $InstallDir
+    $oldTemp = $env:TEMP
+    $oldTmp = $env:TMP
+
+    try {
+        $env:TEMP = $RuntimeTempDir
+        $env:TMP = $RuntimeTempDir
+
+        Start-Process -FilePath $ExePath -WorkingDirectory $InstallDir
+    }
+    finally {
+        $env:TEMP = $oldTemp
+        $env:TMP = $oldTmp
+    }
 }
 
 function Exit-Runner {
@@ -621,10 +630,14 @@ catch {
     Write-Host "   [GODPROJEXTH ERROR]" -ForegroundColor Red
     Write-Host "   $($_.Exception.Message)" -ForegroundColor Red
     Write-Host ""
-    Write-Host "   Correct fix:" -ForegroundColor Yellow
-    Write-Host "   1. Click Update release on GitHub first" -ForegroundColor Yellow
-    Write-Host "   2. Make sure this file exists in Assets:" -ForegroundColor Yellow
-    Write-Host "      $PreferredExeName" -ForegroundColor Yellow
+    Write-Host "   วิธีแก้ถ้ายังขึ้น PySide6 / MSVCP140.dll error:" -ForegroundColor Yellow
+    Write-Host "   1. Build EXE ใหม่ด้วย PyInstaller --clean" -ForegroundColor Yellow
+    Write-Host "   2. ลบไฟล์เก่าที่ %LOCALAPPDATA%\GodprojexthPremium" -ForegroundColor Yellow
+    Write-Host "   3. Upload EXE ใหม่เข้า GitHub Release Assets" -ForegroundColor Yellow
+    Write-Host "   4. กด Update release" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "   Required EXE name:" -ForegroundColor Yellow
+    Write-Host "   $PreferredExeName" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "   Release page:" -ForegroundColor Yellow
     Write-Host "   https://github.com/$RepoOwner/$RepoName/releases/latest" -ForegroundColor Yellow
