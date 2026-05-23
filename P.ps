@@ -23,7 +23,7 @@ $TempDownloadPath = Join-Path $InstallDir ($PreferredExeName + ".download")
 $RuntimeTempDir = Join-Path $InstallDir "runtime_tmp"
 
 $ExpectedSha256 = ""
-$AlwaysDownloadLatest = $true
+$AlwaysDownloadLatest = $false
 $DownloadRetryCount = 3
 
 function Initialize-Console {
@@ -137,23 +137,6 @@ function Show-Header {
     Write-Host ""
 }
 
-function Show-EndLogo {
-    Clear-Host
-    Write-Host ""
-    Write-Centered "╔══════════════════════════════════════════════════════════════════════╗" DarkYellow
-    Write-Centered "║                                                                      ║" DarkYellow
-    Write-Centered "║                     A L P H A   G O D P R O J E X T H                ║" Yellow
-    Write-Centered "║                                                                      ║" DarkYellow
-    Write-Centered "║               █▀█ █░░ █▀█ █░█ █▀█                                    ║" Yellow
-    Write-Centered "║               █▀█ █▄▄ █▀▀ █▀█ █▀█                                    ║" Yellow
-    Write-Centered "║                                                                      ║" DarkYellow
-    Write-Centered "║      █▀▀ █▀█ █▀▄ █▀█ █▀█ █▀█ ░░█ █▀▀ ▀▄▀ ▀█▀ █░█                    ║" Yellow
-    Write-Centered "║      █▄█ █▄█ █▄▀ █▀▀ █▀▄ █▄█ █▄█ █▄▄ █░█ ░█░ █▀█                    ║" Yellow
-    Write-Centered "║                                                                      ║" DarkYellow
-    Write-Centered "╚══════════════════════════════════════════════════════════════════════╝" DarkYellow
-    Write-Host ""
-}
-
 function Show-PremiumBar {
     param(
         [Parameter(Mandatory = $true)]
@@ -176,14 +159,8 @@ function Show-PremiumBar {
         }
 
         $filled = [Math]::Floor(($i / 100) * $barWidth)
-
-        if ($filled -lt 0) {
-            $filled = 0
-        }
-
-        if ($filled -gt $barWidth) {
-            $filled = $barWidth
-        }
+        if ($filled -lt 0) { $filled = 0 }
+        if ($filled -gt $barWidth) { $filled = $barWidth }
 
         $empty = $barWidth - $filled
         $spin = $frames[$i % $frames.Count]
@@ -193,7 +170,6 @@ function Show-PremiumBar {
         $barEmpty = "▓" * $empty
 
         $state = "CONNECTING"
-
         if ($i -ge 35 -and $i -lt 70) {
             $state = "DOWNLOADING"
         }
@@ -630,11 +606,9 @@ catch {
     Write-Host "   [GODPROJEXTH ERROR]" -ForegroundColor Red
     Write-Host "   $($_.Exception.Message)" -ForegroundColor Red
     Write-Host ""
-    Write-Host "   วิธีแก้ถ้ายังขึ้น PySide6 / MSVCP140.dll error:" -ForegroundColor Yellow
-    Write-Host "   1. Build EXE ใหม่ด้วย PyInstaller --clean" -ForegroundColor Yellow
-    Write-Host "   2. ลบไฟล์เก่าที่ %LOCALAPPDATA%\GodprojexthPremium" -ForegroundColor Yellow
-    Write-Host "   3. Upload EXE ใหม่เข้า GitHub Release Assets" -ForegroundColor Yellow
-    Write-Host "   4. กด Update release" -ForegroundColor Yellow
+    Write-Host "   หมายเหตุ:" -ForegroundColor Yellow
+    Write-Host "   ถ้าหน้า GUI ขึ้นแต่ Login ไม่ผ่านและขึ้น WinError 10061" -ForegroundColor Yellow
+    Write-Host "   ต้องแก้ในโค้ด GUI/KeyAuth/API ไม่ใช่ P.ps" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "   Required EXE name:" -ForegroundColor Yellow
     Write-Host "   $PreferredExeName" -ForegroundColor Yellow
