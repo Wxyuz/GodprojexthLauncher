@@ -5,7 +5,16 @@ $ProgressPreference = "SilentlyContinue"
 $RepoOwner = "Wxyuz"
 $RepoName = "GodprojexthLauncher"
 
+$PreferredZipName = "GODPROJEXTH_PORTABLE.zip"
 $PreferredExeName = "POWERSHELLGODPROJEXTH.exe"
+
+$PossibleZipNames = @(
+    "GODPROJEXTH_PORTABLE.zip",
+    "POWERSHELLGODPROJEXTH.zip",
+    "GODPROJEXTH.zip",
+    "GODPROJEXTH_ALPHA.zip",
+    "ALPHA_GODPROJEXTH.zip"
+)
 
 $PossibleExeNames = @(
     "POWERSHELLGODPROJEXTH.exe",
@@ -18,12 +27,17 @@ $PossibleExeNames = @(
 )
 
 $InstallDir = Join-Path $env:LOCALAPPDATA "GodprojexthPremium"
-$ExePath = Join-Path $InstallDir $PreferredExeName
-$TempDownloadPath = Join-Path $InstallDir ($PreferredExeName + ".download")
+$PackageDir = Join-Path $InstallDir "package"
 $RuntimeTempDir = Join-Path $InstallDir "runtime_tmp"
+$ZipPath = Join-Path $InstallDir $PreferredZipName
+$TempZipPath = Join-Path $InstallDir ($PreferredZipName + ".download")
+$FallbackExePath = Join-Path $InstallDir $PreferredExeName
+$TempExePath = Join-Path $InstallDir ($PreferredExeName + ".download")
 
-$ExpectedSha256 = ""
-$AlwaysDownloadLatest = $false
+$ExpectedZipSha256 = ""
+$ExpectedExeSha256 = ""
+
+$AlwaysDownloadLatest = $true
 $DownloadRetryCount = 3
 
 function Initialize-Console {
@@ -133,7 +147,7 @@ function Show-Header {
     Write-Centered "║                                                                      ║" DarkYellow
     Write-Centered "╚══════════════════════════════════════════════════════════════════════╝" DarkYellow
     Write-Host ""
-    Write-Centered "GitHub Release  ->  Download EXE  ->  Open Interface" DarkYellow 1
+    Write-Centered "GitHub Release  ->  Download Package  ->  Open Interface" DarkYellow 1
     Write-Host ""
 }
 
@@ -159,8 +173,14 @@ function Show-PremiumBar {
         }
 
         $filled = [Math]::Floor(($i / 100) * $barWidth)
-        if ($filled -lt 0) { $filled = 0 }
-        if ($filled -gt $barWidth) { $filled = $barWidth }
+
+        if ($filled -lt 0) {
+            $filled = 0
+        }
+
+        if ($filled -gt $barWidth) {
+            $filled = $barWidth
+        }
 
         $empty = $barWidth - $filled
         $spin = $frames[$i % $frames.Count]
@@ -170,6 +190,7 @@ function Show-PremiumBar {
         $barEmpty = "▓" * $empty
 
         $state = "CONNECTING"
+
         if ($i -ge 35 -and $i -lt 70) {
             $state = "DOWNLOADING"
         }
@@ -211,6 +232,14 @@ function Show-Successfully {
 function Ensure-InstallDir {
     if (-not (Test-Path -LiteralPath $InstallDir)) {
         New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+    }
+
+    if (-not (Test-Path -LiteralPath $PackageDir)) {
+        New-Item -ItemType Directory -Path $PackageDir -Force | Out-Null
+    }
+
+    if (-not (Test-Path -LiteralPath $RuntimeTempDir)) {
+        New-Item -ItemType Directory -Path $RuntimeTempDir -Force | Out-Null
     }
 }
 
@@ -294,6 +323,56 @@ function Get-AssetNamesText {
     return ($names -join ", ")
 }
 
+function Select-ZipAssetFromAssets {
+    param(
+        [array]$Assets
+    )
+
+    if ($null -eq $Assets -or $Assets.Count -eq 0) {
+        return $null
+    }
+
+    $exact = $Assets | Where-Object { $_.name -ieq $PreferredZipName } | Select-Object -First 1
+
+    if ($exact -and -not [string]::IsNullOrWhiteSpace($exact.browser_download_url)) {
+        return @{
+            Url = $exact.browser_download_url
+            Name = $exact.name
+            Size = [int64]$exact.size
+            Source = "release-zip-exact"
+            Type = "zip"
+        }
+    }
+
+    foreach ($possibleName in $PossibleZipNames) {
+        $match = $Assets | Where-Object { $_.name -ieq $possibleName } | Select-Object -First 1
+
+        if ($match -and -not [string]::IsNullOrWhiteSpace($match.browser_download_url)) {
+            return @{
+                Url = $match.browser_download_url
+                Name = $match.name
+                Size = [int64]$match.size
+                Source = "release-zip-known"
+                Type = "zip"
+            }
+        }
+    }
+
+    $zipAssets = @($Assets | Where-Object { $_.name -match "\.zip$" -and $_.name -notmatch "Source code" })
+
+    if ($zipAssets.Count -eq 1) {
+        return @{
+            Url = $zipAssets[0].browser_download_url
+            Name = $zipAssets[0].name
+            Size = [int64]$zipAssets[0].size
+            Source = "release-single-zip"
+            Type = "zip"
+        }
+    }
+
+    return $null
+}
+
 function Select-ExeAssetFromAssets {
     param(
         [array]$Assets
@@ -310,7 +389,8 @@ function Select-ExeAssetFromAssets {
             Url = $exact.browser_download_url
             Name = $exact.name
             Size = [int64]$exact.size
-            Source = "latest-release-exact"
+            Source = "release-exe-exact"
+            Type = "exe"
         }
     }
 
@@ -322,7 +402,8 @@ function Select-ExeAssetFromAssets {
                 Url = $match.browser_download_url
                 Name = $match.name
                 Size = [int64]$match.size
-                Source = "latest-release-known"
+                Source = "release-exe-known"
+                Type = "exe"
             }
         }
     }
@@ -334,7 +415,8 @@ function Select-ExeAssetFromAssets {
             Url = $exeAssets[0].browser_download_url
             Name = $exeAssets[0].name
             Size = [int64]$exeAssets[0].size
-            Source = "latest-release-single-exe"
+            Source = "release-single-exe"
+            Type = "exe"
         }
     }
 
@@ -346,7 +428,7 @@ function Select-ExeAssetFromAssets {
     return $null
 }
 
-function Get-GitHubExeInfo {
+function Get-GitHubPackageInfo {
     $latest = Get-LatestRelease
     $latestAssets = @()
 
@@ -354,10 +436,16 @@ function Get-GitHubExeInfo {
         $latestAssets = @($latest.assets)
     }
 
-    $selected = Select-ExeAssetFromAssets -Assets $latestAssets
+    $zipSelected = Select-ZipAssetFromAssets -Assets $latestAssets
 
-    if ($null -ne $selected) {
-        return $selected
+    if ($null -ne $zipSelected) {
+        return $zipSelected
+    }
+
+    $exeSelected = Select-ExeAssetFromAssets -Assets $latestAssets
+
+    if ($null -ne $exeSelected) {
+        return $exeSelected
     }
 
     $latestAssetNames = Get-AssetNamesText -Assets $latestAssets
@@ -370,15 +458,34 @@ function Get-GitHubExeInfo {
             $assets = @($release.assets)
         }
 
-        $selectedFromRelease = Select-ExeAssetFromAssets -Assets $assets
+        $zipFromRelease = Select-ZipAssetFromAssets -Assets $assets
 
-        if ($null -ne $selectedFromRelease) {
+        if ($null -ne $zipFromRelease) {
+            return $zipFromRelease
+        }
+
+        $exeFromRelease = Select-ExeAssetFromAssets -Assets $assets
+
+        if ($null -ne $exeFromRelease) {
+            return $exeFromRelease
+        }
+    }
+
+    foreach ($possibleName in $PossibleZipNames) {
+        $rawUrl = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/main/$possibleName"
+
+        try {
+            $null = Invoke-WebRequest -Uri $rawUrl -Method Head -UseBasicParsing
+
             return @{
-                Url = $selectedFromRelease.Url
-                Name = $selectedFromRelease.Name
-                Size = [int64]$selectedFromRelease.Size
-                Source = "other-release"
+                Url = $rawUrl
+                Name = $possibleName
+                Size = 0
+                Source = "main-branch-raw-zip"
+                Type = "zip"
             }
+        }
+        catch {
         }
     }
 
@@ -392,64 +499,25 @@ function Get-GitHubExeInfo {
                 Url = $rawUrl
                 Name = $possibleName
                 Size = 0
-                Source = "main-branch-raw"
+                Source = "main-branch-raw-exe"
+                Type = "exe"
             }
         }
         catch {
         }
     }
 
-    throw "EXE not found. Latest release assets: $latestAssetNames. Upload your GUI EXE to Latest Release Assets and rename it to $PreferredExeName."
+    throw "Package not found. Latest release assets: $latestAssetNames. Upload GODPROJEXTH_PORTABLE.zip built with PyInstaller --onedir."
 }
 
-function Test-ExistingExe {
-    param(
-        [int64]$RemoteSize = 0
-    )
-
-    if (-not (Test-Path -LiteralPath $ExePath)) {
-        return $false
-    }
-
-    if ($AlwaysDownloadLatest) {
-        return $false
-    }
-
-    try {
-        $info = Get-Item -LiteralPath $ExePath
-
-        if ($info.Length -lt 10240) {
-            Remove-Item -LiteralPath $ExePath -Force -ErrorAction SilentlyContinue
-            return $false
-        }
-
-        if ($RemoteSize -gt 0 -and $info.Length -eq $RemoteSize) {
-            return $true
-        }
-
-        if ([string]::IsNullOrWhiteSpace($ExpectedSha256)) {
-            return $true
-        }
-
-        $actual = (Get-FileHash -Algorithm SHA256 -Path $ExePath).Hash.ToUpperInvariant()
-        $expected = $ExpectedSha256.ToUpperInvariant()
-
-        if ($actual -eq $expected) {
-            return $true
-        }
-
-        Remove-Item -LiteralPath $ExePath -Force -ErrorAction SilentlyContinue
-        return $false
-    }
-    catch {
-        return $false
-    }
-}
-
-function Save-ExeFromUrl {
+function Save-FileFromUrl {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Url,
+        [Parameter(Mandatory = $true)]
+        [string]$OutputPath,
+        [Parameter(Mandatory = $true)]
+        [string]$TempPath,
         [int64]$RemoteSize
     )
 
@@ -457,17 +525,17 @@ function Save-ExeFromUrl {
 
     for ($attempt = 1; $attempt -le $DownloadRetryCount; $attempt++) {
         try {
-            if (Test-Path -LiteralPath $TempDownloadPath) {
-                Remove-Item -LiteralPath $TempDownloadPath -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $TempPath) {
+                Remove-Item -LiteralPath $TempPath -Force -ErrorAction SilentlyContinue
             }
 
-            Invoke-WebRequest -Uri $Url -OutFile $TempDownloadPath -UseBasicParsing
+            Invoke-WebRequest -Uri $Url -OutFile $TempPath -UseBasicParsing
 
-            if (-not (Test-Path -LiteralPath $TempDownloadPath)) {
+            if (-not (Test-Path -LiteralPath $TempPath)) {
                 throw "Temporary download file was not created."
             }
 
-            $downloaded = Get-Item -LiteralPath $TempDownloadPath
+            $downloaded = Get-Item -LiteralPath $TempPath
 
             if ($downloaded.Length -lt 10240) {
                 throw "Downloaded file is too small."
@@ -477,14 +545,14 @@ function Save-ExeFromUrl {
                 throw "Downloaded size mismatch. Expected $RemoteSize bytes, got $($downloaded.Length) bytes."
             }
 
-            if (Test-Path -LiteralPath $ExePath) {
-                Remove-Item -LiteralPath $ExePath -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $OutputPath) {
+                Remove-Item -LiteralPath $OutputPath -Force -ErrorAction SilentlyContinue
             }
 
-            Move-Item -LiteralPath $TempDownloadPath -Destination $ExePath -Force
+            Move-Item -LiteralPath $TempPath -Destination $OutputPath -Force
 
             try {
-                Unblock-File -LiteralPath $ExePath -ErrorAction SilentlyContinue
+                Unblock-File -LiteralPath $OutputPath -ErrorAction SilentlyContinue
             }
             catch {
             }
@@ -494,8 +562,8 @@ function Save-ExeFromUrl {
         catch {
             $lastError = $_.Exception.Message
 
-            if (Test-Path -LiteralPath $TempDownloadPath) {
-                Remove-Item -LiteralPath $TempDownloadPath -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $TempPath) {
+                Remove-Item -LiteralPath $TempPath -Force -ErrorAction SilentlyContinue
             }
 
             Start-Sleep -Milliseconds 350
@@ -505,58 +573,175 @@ function Save-ExeFromUrl {
     throw "Download failed after $DownloadRetryCount attempts. Last error: $lastError"
 }
 
-function Download-Exe {
+function Clear-PackageDirectory {
+    if (Test-Path -LiteralPath $PackageDir) {
+        Remove-Item -LiteralPath $PackageDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    New-Item -ItemType Directory -Path $PackageDir -Force | Out-Null
+}
+
+function Expand-ZipPackage {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ZipFile
+    )
+
+    Clear-PackageDirectory
+
+    try {
+        Expand-Archive -LiteralPath $ZipFile -DestinationPath $PackageDir -Force
+    }
+    catch {
+        throw "Cannot extract ZIP package. Rebuild ZIP and upload again."
+    }
+}
+
+function Find-ExeInsidePackage {
+    $exact = Get-ChildItem -LiteralPath $PackageDir -Filter $PreferredExeName -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+
+    if ($null -ne $exact) {
+        return $exact.FullName
+    }
+
+    foreach ($possibleName in $PossibleExeNames) {
+        $match = Get-ChildItem -LiteralPath $PackageDir -Filter $possibleName -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+
+        if ($null -ne $match) {
+            return $match.FullName
+        }
+    }
+
+    $allExe = @(Get-ChildItem -LiteralPath $PackageDir -Filter "*.exe" -Recurse -ErrorAction SilentlyContinue)
+
+    if ($allExe.Count -eq 1) {
+        return $allExe[0].FullName
+    }
+
+    if ($allExe.Count -gt 1) {
+        $names = ($allExe | ForEach-Object { $_.Name }) -join ", "
+        throw "Multiple EXE files found inside ZIP: $names. Keep only one main EXE or name it $PreferredExeName."
+    }
+
+    throw "No EXE found inside ZIP package."
+}
+
+function Download-Package {
     Ensure-InstallDir
 
     Write-Status "Connecting to GitHub release." Green
 
-    $exeInfo = Get-GitHubExeInfo
-    $exeUrl = $exeInfo.Url
-    $remoteName = $exeInfo.Name
-    $sourceType = $exeInfo.Source
-    $remoteSize = [int64]$exeInfo.Size
-
-    if (Test-ExistingExe -RemoteSize $remoteSize) {
-        Write-Status "Using cached package: $remoteName" Green
-        Show-PremiumBar -Label "Preparing cached interface" -Start 60 -End 88 -Delay 1
-        return
-    }
+    $packageInfo = Get-GitHubPackageInfo
+    $packageUrl = $packageInfo.Url
+    $packageName = $packageInfo.Name
+    $packageSource = $packageInfo.Source
+    $packageType = $packageInfo.Type
+    $packageSize = [int64]$packageInfo.Size
 
     Show-PremiumBar -Label "Checking premium package" -Start 1 -End 20 -Delay 2
 
-    Write-Status "Found package: $remoteName" Green
-    Write-Status "Source: $sourceType" Yellow
+    Write-Status "Found package: $packageName" Green
+    Write-Status "Source: $packageSource" Yellow
+    Write-Status "Type: $packageType" Yellow
 
     Show-PremiumBar -Label "Downloading GODPROJEXTH interface" -Start 21 -End 70 -Delay 2
 
-    Save-ExeFromUrl -Url $exeUrl -RemoteSize $remoteSize
+    if ($packageType -eq "zip") {
+        Save-FileFromUrl -Url $packageUrl -OutputPath $ZipPath -TempPath $TempZipPath -RemoteSize $packageSize
+        return @{
+            Type = "zip"
+            Path = $ZipPath
+        }
+    }
+
+    if ($packageType -eq "exe") {
+        Save-FileFromUrl -Url $packageUrl -OutputPath $FallbackExePath -TempPath $TempExePath -RemoteSize $packageSize
+        return @{
+            Type = "exe"
+            Path = $FallbackExePath
+        }
+    }
+
+    throw "Unknown package type."
 }
 
-function Verify-Exe {
-    if ([string]::IsNullOrWhiteSpace($ExpectedSha256)) {
-        Write-Status "SHA256 skipped." Yellow
-        Show-PremiumBar -Label "Preparing verified package" -Start 71 -End 88 -Delay 1
+function Verify-Package {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Package
+    )
+
+    if ($Package.Type -eq "zip") {
+        if ([string]::IsNullOrWhiteSpace($ExpectedZipSha256)) {
+            Write-Status "ZIP SHA256 skipped." Yellow
+            Show-PremiumBar -Label "Preparing verified package" -Start 71 -End 84 -Delay 1
+            return
+        }
+
+        $actualZip = (Get-FileHash -Algorithm SHA256 -Path $Package.Path).Hash.ToUpperInvariant()
+        $expectedZip = $ExpectedZipSha256.ToUpperInvariant()
+
+        if ($actualZip -ne $expectedZip) {
+            Remove-Item -LiteralPath $Package.Path -Force -ErrorAction SilentlyContinue
+            throw "ZIP SHA256 mismatch."
+        }
+
         return
     }
 
-    Write-Status "Verifying file integrity." Green
-    Show-PremiumBar -Label "Verifying SHA256 integrity" -Start 71 -End 88 -Delay 1
+    if ($Package.Type -eq "exe") {
+        if ([string]::IsNullOrWhiteSpace($ExpectedExeSha256)) {
+            Write-Status "EXE SHA256 skipped." Yellow
+            Show-PremiumBar -Label "Preparing verified package" -Start 71 -End 84 -Delay 1
+            return
+        }
 
-    $actual = (Get-FileHash -Algorithm SHA256 -Path $ExePath).Hash.ToUpperInvariant()
-    $expected = $ExpectedSha256.ToUpperInvariant()
+        $actualExe = (Get-FileHash -Algorithm SHA256 -Path $Package.Path).Hash.ToUpperInvariant()
+        $expectedExe = $ExpectedExeSha256.ToUpperInvariant()
 
-    if ($actual -ne $expected) {
-        Remove-Item -LiteralPath $ExePath -Force -ErrorAction SilentlyContinue
-        throw "SHA256 mismatch. File is not the expected GODPROJEXTH EXE."
+        if ($actualExe -ne $expectedExe) {
+            Remove-Item -LiteralPath $Package.Path -Force -ErrorAction SilentlyContinue
+            throw "EXE SHA256 mismatch."
+        }
+
+        return
     }
 }
 
+function Prepare-Executable {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Package
+    )
+
+    if ($Package.Type -eq "zip") {
+        Write-Status "Extracting portable package." Green
+        Show-PremiumBar -Label "Extracting GODPROJEXTH package" -Start 85 -End 92 -Delay 1
+        Expand-ZipPackage -ZipFile $Package.Path
+        $exeInside = Find-ExeInsidePackage
+        return $exeInside
+    }
+
+    if ($Package.Type -eq "exe") {
+        Write-Status "Using onefile EXE fallback." Yellow
+        Show-PremiumBar -Label "Preparing onefile runtime" -Start 85 -End 92 -Delay 1
+        return $Package.Path
+    }
+
+    throw "Cannot prepare executable."
+}
+
 function Open-GuiExe {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ExecutablePath
+    )
+
     Write-Status "Preparing clean runtime temp." Green
     Prepare-RuntimeTemp
 
     Write-Status "Opening premium interface." Green
-    Show-PremiumBar -Label "Opening interface" -Start 89 -End 100 -Delay 1
+    Show-PremiumBar -Label "Opening interface" -Start 93 -End 100 -Delay 1
     Show-Successfully
 
     $oldTemp = $env:TEMP
@@ -566,7 +751,9 @@ function Open-GuiExe {
         $env:TEMP = $RuntimeTempDir
         $env:TMP = $RuntimeTempDir
 
-        Start-Process -FilePath $ExePath -WorkingDirectory $InstallDir
+        $workingDirectory = Split-Path -Parent $ExecutablePath
+
+        Start-Process -FilePath $ExecutablePath -WorkingDirectory $workingDirectory
     }
     finally {
         $env:TEMP = $oldTemp
@@ -590,9 +777,10 @@ try {
     Initialize-Console
     Show-Header
 
-    Download-Exe
-    Verify-Exe
-    Open-GuiExe
+    $package = Download-Package
+    Verify-Package -Package $package
+    $executable = Prepare-Executable -Package $package
+    Open-GuiExe -ExecutablePath $executable
     Exit-Runner
 }
 catch {
@@ -606,18 +794,19 @@ catch {
     Write-Host "   [GODPROJEXTH ERROR]" -ForegroundColor Red
     Write-Host "   $($_.Exception.Message)" -ForegroundColor Red
     Write-Host ""
-    Write-Host "   หมายเหตุ:" -ForegroundColor Yellow
-    Write-Host "   ถ้าหน้า GUI ขึ้นแต่ Login ไม่ผ่านและขึ้น WinError 10061" -ForegroundColor Yellow
-    Write-Host "   ต้องแก้ในโค้ด GUI/KeyAuth/API ไม่ใช่ P.ps" -ForegroundColor Yellow
-    Write-Host ""
-    Write-Host "   Required EXE name:" -ForegroundColor Yellow
-    Write-Host "   $PreferredExeName" -ForegroundColor Yellow
+    Write-Host "   วิธีแก้ PySide6 / MSVCP140.dll decompression error:" -ForegroundColor Yellow
+    Write-Host "   1. Build ใหม่ด้วยคำสั่งนี้:" -ForegroundColor Yellow
+    Write-Host "      pyinstaller --noconfirm --clean --onedir --windowed --name `"POWERSHELLGODPROJEXTH`" Powershell.py" -ForegroundColor Yellow
+    Write-Host "   2. Zip ทั้งโฟลเดอร์ dist\POWERSHELLGODPROJEXTH" -ForegroundColor Yellow
+    Write-Host "   3. ตั้งชื่อ ZIP เป็น GODPROJEXTH_PORTABLE.zip" -ForegroundColor Yellow
+    Write-Host "   4. Upload ZIP เข้า GitHub Release Assets" -ForegroundColor Yellow
+    Write-Host "   5. กด Update release" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "   Release page:" -ForegroundColor Yellow
     Write-Host "   https://github.com/$RepoOwner/$RepoName/releases/latest" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "   Install path:" -ForegroundColor Yellow
-    Write-Host "   $ExePath" -ForegroundColor Yellow
+    Write-Host "   $InstallDir" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "   Press Enter to close..." -ForegroundColor Yellow
     [void][System.Console]::ReadLine()
